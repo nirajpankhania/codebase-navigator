@@ -1,1 +1,14 @@
 CLAUDE.md
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+
+# Node
+node_modules/
+.env.local
+.next/
+
+# General
+.DS_Store
