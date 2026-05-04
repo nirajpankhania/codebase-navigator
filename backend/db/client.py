@@ -1,12 +1,18 @@
 import os
+
 from dotenv import load_dotenv
+from supabase import Client, create_client
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+_client: Client | None = None
 
 
-def get_client():
-    # TODO: initialise and return supabase-py client
-    raise NotImplementedError("Supabase client not yet configured")
+def get_client() -> Client:
+    global _client
+    if _client is None:
+        _client = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SERVICE_KEY"],
+        )
+    return _client
