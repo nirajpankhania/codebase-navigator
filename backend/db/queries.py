@@ -7,7 +7,7 @@ def insert_chunks(repo_id: str, chunks: list[dict]) -> None:
     client = get_client()
     for i in range(0, len(chunks), _INSERT_BATCH):
         batch = chunks[i : i + _INSERT_BATCH]
-        client.table("chunks").insert(batch).execute()
+        client.table("chunks").insert([{"repo_id": repo_id, **row} for row in batch]).execute()
 
 
 def similarity_search(
