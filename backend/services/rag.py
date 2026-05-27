@@ -1,6 +1,8 @@
 import os
 import re
 
+import asyncio
+
 from openai import AsyncOpenAI
 
 from db.queries import similarity_search
@@ -26,8 +28,23 @@ def _get_client() -> AsyncOpenAI:
 
 
 async def answer_question(question: str, repo_id: str) -> dict:
-    [question_embedding] = await embed_chunks([question])
-    chunks = similarity_search(repo_id, question_embedding, top_k=5)
+    # Run two searches in parallel: one for the question, one anchored on
+    # overview/readme content so broad questions always get useful context.
+    overview_query = "project overview description purpose readme what does this do"
+    [question_embedding, overview_embedding] = await embed_chunks([question, overview_query])
+
+    primary, overview = await asyncio.gather(
+        asyncio.to_thread(similarity_search, repo_id, question_embedding, 10),
+        asyncio.to_thread(similarity_search, repo_id, overview_embedding, 4),
+    )
+
+    seen: set[str] = set()
+    chunks: list[dict] = []
+    for c in primary + overview:
+        key = f"{c['file_path']}:{c['content'][:50]}"
+        if key not in seen:
+            seen.add(key)
+            chunks.append(c)
 
     if not chunks:
         return {
