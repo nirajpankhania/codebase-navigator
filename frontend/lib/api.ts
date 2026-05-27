@@ -34,6 +34,30 @@ export async function ingestRepo(repoUrl: string): Promise<IngestResponse> {
   return res.json();
 }
 
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: "directory" | "file";
+  extension: string | null;
+  depth: number;
+}
+
+export interface GraphLink {
+  source: string;
+  target: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+export async function getGraph(repoId: string): Promise<GraphData> {
+  const res = await fetch(`${API_URL}/api/graph/${repoId}`);
+  if (!res.ok) throw new Error("Failed to fetch graph");
+  return res.json();
+}
+
 export async function getIngestionStatus(repoId: string): Promise<StatusResponse> {
   const res = await fetch(`${API_URL}/api/status/${repoId}`);
   if (!res.ok) throw new Error("Failed to fetch status");

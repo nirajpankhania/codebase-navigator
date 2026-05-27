@@ -10,6 +10,24 @@ def insert_chunks(repo_id: str, chunks: list[dict]) -> None:
         client.table("chunks").insert([{"repo_id": repo_id, **row} for row in batch]).execute()
 
 
+def get_file_paths(repo_id: str) -> list[str]:
+    client = get_client()
+    result = (
+        client.table("chunks")
+        .select("file_path")
+        .eq("repo_id", repo_id)
+        .execute()
+    )
+    seen: set[str] = set()
+    paths: list[str] = []
+    for row in result.data or []:
+        p = row["file_path"]
+        if p not in seen:
+            seen.add(p)
+            paths.append(p)
+    return paths
+
+
 def similarity_search(
     repo_id: str, embedding: list[float], top_k: int = 5
 ) -> list[dict]:
