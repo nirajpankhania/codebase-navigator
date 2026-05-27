@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,9 +9,13 @@ from routes.status import router as status_router
 
 app = FastAPI(title="Codebase Navigator API")
 
+_origins = ["http://localhost:3000", "http://localhost:3001"]
+if allowed := os.getenv("ALLOWED_ORIGIN"):
+    _origins.append(allowed)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

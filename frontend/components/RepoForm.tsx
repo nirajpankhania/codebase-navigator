@@ -8,20 +8,26 @@ export function RepoForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [warmingUp, setWarmingUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setWarmingUp(false);
+    const warmupTimer = setTimeout(() => setWarmingUp(true), 8000);
     try {
       const { repo_id } = await ingestRepo(url);
+      clearTimeout(warmupTimer);
       const repoName = new URL(url).pathname.replace(/^\/|\/$/g, "");
       router.push(`/chat/${repo_id}?repo=${encodeURIComponent(repoName)}`);
       // Don't setLoading(false) — we navigate away immediately
     } catch (err) {
+      clearTimeout(warmupTimer);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
+      setWarmingUp(false);
     }
   }
 
@@ -57,7 +63,7 @@ export function RepoForm() {
         {loading ? (
           <>
             <SpinnerIcon />
-            Ingesting repository...
+            {warmingUp ? "Waking up server..." : "Connecting..."}
           </>
         ) : (
           <>
