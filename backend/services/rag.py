@@ -1,4 +1,5 @@
 import os
+import re
 
 from openai import AsyncOpenAI
 
@@ -9,7 +10,10 @@ _client: AsyncOpenAI | None = None
 
 _SYSTEM_PROMPT = (
     "You are an expert code assistant. Answer the user's question using only the "
-    "provided source code excerpts. Cite the file path(s) your answer draws from. "
+    "provided source code excerpts. "
+    "IMPORTANT: Do NOT include any source citations, file names, or references like "
+    "'(Source: ...)', '[file.py]', or 'as seen in ...' anywhere in your answer. "
+    "Source attribution is handled separately by the UI. Just answer the question directly. "
     "If the excerpts don't contain enough information to answer, say so clearly."
 )
 
@@ -44,7 +48,8 @@ async def answer_question(question: str, repo_id: str) -> dict:
         temperature=0.2,
     )
 
-    answer = response.choices[0].message.content or ""
+    raw_answer = response.choices[0].message.content or ""
+    answer = re.sub(r"\s*\(Source:[^)]*\)", "", raw_answer).strip()
     sources = [
         {"file_path": c["file_path"], "snippet": c["content"][:200]}
         for c in chunks

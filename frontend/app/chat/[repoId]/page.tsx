@@ -3,9 +3,11 @@ import { ChatInterface } from "@/components/ChatInterface";
 
 interface PageProps {
   params: { repoId: string };
+  searchParams: { repo?: string };
 }
 
-export default function ChatPage({ params }: PageProps) {
+export default function ChatPage({ params, searchParams }: PageProps) {
+  const repoLabel = searchParams.repo ?? params.repoId;
   return (
     <div className="flex h-screen flex-col bg-slate-950 text-slate-50">
       <header className="flex shrink-0 items-center gap-4 border-b border-slate-800 bg-slate-950/80 px-5 py-3.5 backdrop-blur-sm">
@@ -27,8 +29,8 @@ export default function ChatPage({ params }: PageProps) {
 
         <div className="ml-auto flex items-center gap-2 rounded-md border border-slate-700/60 bg-slate-900 px-2.5 py-1">
           <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-          <code className="max-w-[200px] truncate font-mono text-xs text-slate-400">
-            {params.repoId}
+          <code className="max-w-[240px] truncate font-mono text-xs text-slate-400">
+            {repoLabel}
           </code>
         </div>
       </header>

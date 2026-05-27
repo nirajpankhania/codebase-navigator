@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codebase Navigator — Design Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+          keyframes: {
+            thinking: {
+              '0%, 80%, 100%': { opacity: '0.2', transform: 'translateY(0)' },
+              '40%': { opacity: '1', transform: 'translateY(-4px)' },
+            },
+          },
+          animation: {
+            'thinking-1': 'thinking 1.4s ease-in-out infinite 0s',
+            'thinking-2': 'thinking 1.4s ease-in-out infinite 0.2s',
+            'thinking-3': 'thinking 1.4s ease-in-out infinite 0.4s',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+    *::-webkit-scrollbar { width: 6px; }
+    *::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::selection { background: rgba(139, 92, 246, 0.3); }
+  </style>
+</head>
+<body class="font-sans bg-slate-950 text-slate-50 antialiased">
+
+  <!-- ─── Preview switcher ──────────────────────────────────────────────── -->
+  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900/95 p-1 shadow-2xl backdrop-blur-sm">
+    <button onclick="showPage('landing')" id="btn-landing"
+      class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 bg-slate-700 text-slate-100 cursor-pointer">
+      Landing Page
+    </button>
+    <button onclick="showPage('chat')" id="btn-chat"
+      class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
+      Chat Page
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       LANDING PAGE
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="page-landing" class="relative bg-slate-950 text-slate-50 overflow-hidden">
+
+    <!-- Animated particle canvas (landing only) -->
+    <canvas id="bg-canvas" class="absolute inset-0 w-full h-full pointer-events-none" style="z-index:0;"></canvas>
+
+    <!-- Ambient glow blobs -->
+    <div class="pointer-events-none absolute inset-0 overflow-hidden" style="z-index:1;">
+      <div class="absolute -top-32 -right-20 w-[600px] h-[600px] rounded-full bg-violet-600/8 blur-[130px]"></div>
+      <div class="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-violet-900/10 blur-[100px]"></div>
+    </div>
+
+    <!-- ── Hero ───────────────────────────────────────────────────────── -->
+    <section class="relative flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-16 text-center" style="z-index:2;">
+
+      <!-- Badge -->
+      <div class="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-500/25 bg-violet-500/8 px-4 py-1.5 text-sm font-medium text-violet-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+        AI-Powered Codebase Chat
+      </div>
+
+      <!-- Headline -->
+      <h1 class="max-w-4xl text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-slate-50 leading-[1.1]">
+        Understand any
+        <span class="text-violet-400"> codebase</span>
+        <br/>instantly
+      </h1>
+
+      <!-- Sub -->
+      <p class="mt-6 max-w-lg text-lg leading-relaxed text-slate-400">
+        Paste a GitHub URL. We fetch, chunk, and embed the entire repo so you can
+        ask questions, trace logic, and explore code — in plain English.
+      </p>
+
+      <!-- URL Form -->
+      <div class="mt-10 w-full max-w-xl">
+        <div class="flex flex-col gap-3">
+          <div class="relative flex items-center">
+            <div class="pointer-events-none absolute left-3.5 text-slate-500">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+              </svg>
+            </div>
+            <input type="url" placeholder="https://github.com/owner/repo"
+              class="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-3.5 pl-11 pr-4 text-slate-100 placeholder-slate-600 transition-colors duration-200 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 backdrop-blur-sm" />
+          </div>
+          <button class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 font-semibold text-white transition-all duration-200 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40">
+            Analyze Repository
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+        <p class="mt-4 text-xs text-slate-600">Works with any public GitHub repository</p>
+      </div>
+
+      <!-- Scroll hint -->
+      <div class="absolute bottom-8 flex flex-col items-center gap-1 text-slate-700">
+        <span class="text-xs">scroll to see features</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ── Feature cards ─────────────────────────────────────────────── -->
+    <section class="relative border-t border-slate-800 bg-slate-900/60 px-4 py-24" style="z-index:2;">
+      <div class="mx-auto max-w-5xl">
+        <div class="mb-12 text-center">
+          <h2 class="text-2xl font-semibold text-slate-100">How it works</h2>
+          <p class="mt-2 text-slate-500">Three steps from URL to conversation</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+
+          <div class="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-200 hover:border-violet-500/30 hover:bg-slate-900 cursor-default">
+            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-violet-400 transition-colors duration-200 group-hover:bg-violet-500/10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div class="mb-2 text-xs font-mono font-medium text-violet-500/70 uppercase tracking-wider">Step 01</div>
+            <h3 class="mb-2 font-semibold text-slate-100">Smart Ingestion</h3>
+            <p class="text-sm leading-relaxed text-slate-400">Fetches every source file from GitHub and splits it into meaningful, overlapping chunks using tiktoken.</p>
+          </div>
+
+          <div class="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-200 hover:border-violet-500/30 hover:bg-slate-900 cursor-default">
+            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-violet-400 transition-colors duration-200 group-hover:bg-violet-500/10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+              </svg>
+            </div>
+            <div class="mb-2 text-xs font-mono font-medium text-violet-500/70 uppercase tracking-wider">Step 02</div>
+            <h3 class="mb-2 font-semibold text-slate-100">Vector Embeddings</h3>
+            <p class="text-sm leading-relaxed text-slate-400">Embeds each chunk with <code class="font-mono text-xs bg-slate-800 px-1 rounded text-slate-300">text-embedding-3-small</code> and stores vectors in Supabase pgvector.</p>
+          </div>
+
+          <div class="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-200 hover:border-violet-500/30 hover:bg-slate-900 cursor-default">
+            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-violet-400 transition-colors duration-200 group-hover:bg-violet-500/10">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <div class="mb-2 text-xs font-mono font-medium text-violet-500/70 uppercase tracking-wider">Step 03</div>
+            <h3 class="mb-2 font-semibold text-slate-100">RAG Chat</h3>
+            <p class="text-sm leading-relaxed text-slate-400">Retrieves the most relevant context at query time and answers with <code class="font-mono text-xs bg-slate-800 px-1 rounded text-slate-300">gpt-4o-mini</code>.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CHAT PAGE
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="page-chat" class="flex-col bg-slate-950 text-slate-50" style="display:none; height:100vh;">
+
+    <!-- Header -->
+    <header class="flex shrink-0 items-center gap-4 border-b border-slate-800 bg-slate-950/80 px-5 py-3.5 backdrop-blur-sm">
+      <button class="flex cursor-pointer items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors duration-200 hover:bg-slate-800 hover:text-slate-200">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </button>
+      <div class="h-5 w-px bg-slate-800"></div>
+      <div class="flex items-center gap-2">
+        <div class="flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10 text-violet-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="10" rx="2"/>
+            <circle cx="12" cy="5" r="2"/>
+            <path d="M12 7v4"/>
+          </svg>
+        </div>
+        <span class="font-medium text-slate-100">Codebase Navigator</span>
+      </div>
+      <div class="ml-auto flex items-center gap-2 rounded-md border border-slate-700/60 bg-slate-900 px-2.5 py-1">
+        <span class="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
+        <code class="font-mono text-xs text-slate-400">a3f7c891-4d2e-demo</code>
+      </div>
+    </header>
+
+    <!-- Message area -->
+    <div class="overflow-y-auto px-4 py-6 space-y-6" style="flex:1; min-height:0;">
+
+      <!-- Empty state -->
+      <div id="empty-state" class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800 text-violet-400">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+        <h2 class="mb-2 text-lg font-semibold text-slate-200">Ready to explore</h2>
+        <p class="max-w-sm text-sm leading-relaxed text-slate-500">
+          Ask anything about this repository — architecture, functions,
+          dependencies, or how specific code works.
+        </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-2">
+          <button onclick="prefill('What does this repo do?')" class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:text-slate-300">
+            What does this repo do?
+          </button>
+          <button onclick="prefill('What are the main entry points?')" class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:text-slate-300">
+            What are the main entry points?
+          </button>
+          <button onclick="prefill('How is auth handled?')" class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:text-slate-300">
+            How is auth handled?
+          </button>
+        </div>
+      </div>
+
+      <!-- Sample conversation -->
+      <div id="sample-convo" class="space-y-6" style="display:none;">
+        <div class="flex justify-end">
+          <div class="max-w-prose rounded-2xl rounded-br-sm bg-slate-700 px-4 py-3 text-sm leading-relaxed text-slate-100">
+            What does this repository do?
+          </div>
+        </div>
+
+        <div class="flex justify-start">
+          <div class="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/>
+            </svg>
+          </div>
+          <div class="max-w-prose rounded-2xl rounded-bl-sm border border-slate-700/50 bg-slate-800/70 px-4 py-3 text-sm leading-relaxed text-slate-200">
+            This is a <strong class="font-semibold text-slate-100">Codebase Navigator</strong> — an AI-powered tool for chatting with any GitHub repository.<br/><br/>
+            The main flow: (1) you paste a GitHub URL, (2) the backend fetches all source files and chunks them, (3) embeds each chunk with
+            <code class="font-mono text-xs bg-slate-700/80 px-1.5 py-0.5 rounded text-violet-300">text-embedding-3-small</code>,
+            stores vectors in Supabase pgvector, then (4) answers questions by retrieving relevant context and passing it to
+            <code class="font-mono text-xs bg-slate-700/80 px-1.5 py-0.5 rounded text-violet-300">gpt-4o-mini</code>.
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <div class="max-w-prose rounded-2xl rounded-br-sm bg-slate-700 px-4 py-3 text-sm leading-relaxed text-slate-100">
+            Where does the ingestion logic live in the backend?
+          </div>
+        </div>
+
+        <!-- Thinking dots -->
+        <div class="flex justify-start">
+          <div class="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/>
+            </svg>
+          </div>
+          <div class="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-slate-700/50 bg-slate-800/70 px-4 py-4">
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-1"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-2"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-3"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Demo switcher (preview only) -->
+    <div class="flex justify-center gap-3 border-t border-slate-800/60 py-2" style="flex-shrink:0;">
+      <button onclick="showEmpty()" class="text-xs text-slate-700 hover:text-slate-500 px-2 py-1 cursor-pointer transition-colors">Empty state</button>
+      <span class="text-slate-800 text-xs self-center">·</span>
+      <button onclick="showConvo()" class="text-xs text-slate-700 hover:text-slate-500 px-2 py-1 cursor-pointer transition-colors">With conversation</button>
+    </div>
+
+    <!-- Input bar -->
+    <div class="border-t border-slate-800 bg-slate-950/80 p-4 backdrop-blur-sm" style="flex-shrink:0;">
+      <div class="mx-auto flex max-w-3xl items-center gap-3">
+        <input type="text" id="chat-input" placeholder="Ask a question about this codebase..."
+          class="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 placeholder-slate-600 transition-colors duration-200 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20" />
+        <button class="flex cursor-pointer items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition-all duration-200 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+          <span>Send</span>
+        </button>
+      </div>
+      <p class="mt-2 text-center text-xs text-slate-700">Powered by GPT-4o-mini + text-embedding-3-small</p>
+    </div>
+  </div>
+
+  <!-- ─── Scripts ───────────────────────────────────────────────────────── -->
+  <script>
+    /* ── Page switcher ─────────────────────────────────────────────── */
+    function showPage(page) {
+      const landing = document.getElementById('page-landing');
+      const chat    = document.getElementById('page-chat');
+      const btnL    = document.getElementById('btn-landing');
+      const btnC    = document.getElementById('btn-chat');
+
+      if (page === 'landing') {
+        landing.style.display = '';
+        chat.style.display    = 'none';
+        btnL.classList.add('bg-slate-700', 'text-slate-100');
+        btnL.classList.remove('text-slate-400');
+        btnC.classList.remove('bg-slate-700', 'text-slate-100');
+        btnC.classList.add('text-slate-400');
+        startCanvas();
+      } else {
+        landing.style.display = 'none';
+        chat.style.display    = 'flex';
+        btnC.classList.add('bg-slate-700', 'text-slate-100');
+        btnC.classList.remove('text-slate-400');
+        btnL.classList.remove('bg-slate-700', 'text-slate-100');
+        btnL.classList.add('text-slate-400');
+        stopCanvas();
+      }
+    }
+
+    function showEmpty() {
+      document.getElementById('empty-state').style.display   = '';
+      document.getElementById('sample-convo').style.display  = 'none';
+    }
+
+    function showConvo() {
+      document.getElementById('empty-state').style.display   = 'none';
+      document.getElementById('sample-convo').style.display  = '';
+    }
+
+    function prefill(text) {
+      const el = document.getElementById('chat-input');
+      el.value = text;
+      el.focus();
+    }
+
+    /* ── Particle network canvas ───────────────────────────────────── */
+    const canvas  = document.getElementById('bg-canvas');
+    const ctx     = canvas.getContext('2d');
+    const VIOLET  = '139, 92, 246';   // rgb values for violet-500
+    const CONNECT = 140;               // max px between connected nodes
+    const COUNT   = 72;
+    const SPEED   = 0.35;
+    const MOUSE_R = 180;               // mouse attraction radius
+
+    let particles = [];
+    let ripples   = [];
+    let mouse     = { x: -9999, y: -9999 };
+    let rafId     = null;
+    let running   = false;
+
+    function resize() {
+      const landing = document.getElementById('page-landing');
+      canvas.width  = landing.offsetWidth;
+      canvas.height = landing.offsetHeight;
+    }
+
+    function makeParticles() {
+      particles = Array.from({ length: COUNT }, () => ({
+        x:  Math.random() * canvas.width,
+        y:  Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * SPEED,
+        vy: (Math.random() - 0.5) * SPEED,
+        r:  Math.random() * 1.4 + 0.6,
+      }));
+    }
+
+    function tick() {
+      if (!running) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const p of particles) {
+        // Gentle mouse attraction
+        const dx   = mouse.x - p.x;
+        const dy   = mouse.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < MOUSE_R && dist > 0) {
+          p.vx += (dx / dist) * 0.018;
+          p.vy += (dy / dist) * 0.018;
+        }
+
+        // Speed cap + dampen
+        const speed = Math.hypot(p.vx, p.vy);
+        if (speed > SPEED * 2.5) {
+          p.vx = (p.vx / speed) * SPEED * 2.5;
+          p.vy = (p.vy / speed) * SPEED * 2.5;
+        }
+        p.vx *= 0.992;
+        p.vy *= 0.992;
+
+        // Move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap edges (seamless)
+        if (p.x < -10)               p.x = canvas.width  + 10;
+        if (p.x > canvas.width + 10) p.x = -10;
+        if (p.y < -10)               p.y = canvas.height + 10;
+        if (p.y > canvas.height + 10) p.y = -10;
+
+        // Draw node
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${VIOLET}, 0.55)`;
+        ctx.fill();
+      }
+
+      // Draw edges
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx   = particles[i].x - particles[j].x;
+          const dy   = particles[i].y - particles[j].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < CONNECT) {
+            const alpha = (1 - dist / CONNECT) * 0.22;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(${VIOLET}, ${alpha})`;
+            ctx.lineWidth   = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${VIOLET}, ${rp.alpha})`;
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+        rp.r     += 3;
+        rp.alpha -= 0.025;
+        if (rp.alpha <= 0) ripples.splice(i, 1);
+      }
+
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function startCanvas() {
+      if (running) return;
+      running = true;
+      resize();
+      makeParticles();
+      tick();
+    }
+
+    function stopCanvas() {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    // Mouse tracking
+    document.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top + document.getElementById('page-landing').scrollTop;
+    });
+
+    // Click to spawn a burst of particles
+    const MAX_PARTICLES = 220;
+    const BURST_COUNT   = 8;
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const cx   = e.clientX - rect.left;
+      const cy   = e.clientY - rect.top + document.getElementById('page-landing').scrollTop;
+
+      // Ripple effect
+      ripples.push({ x: cx, y: cy, r: 0, alpha: 0.6 });
+
+      // Spawn particles capped at MAX_PARTICLES
+      const slots = Math.min(BURST_COUNT, MAX_PARTICLES - particles.length);
+      for (let i = 0; i < slots; i++) {
+        const angle = (i / BURST_COUNT) * Math.PI * 2 + Math.random() * 0.5;
+        const speed = SPEED * (1.5 + Math.random() * 2);
+        particles.push({
+          x:  cx + (Math.random() - 0.5) * 8,
+          y:  cy + (Math.random() - 0.5) * 8,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r:  Math.random() * 1.4 + 0.6,
+        });
+      }
+    });
+
+    // Also allow clicks anywhere on the landing hero section (not just canvas)
+    document.getElementById('page-landing').addEventListener('click', (e) => {
+      if (e.target === canvas) return; // already handled above
+      const rect = canvas.getBoundingClientRect();
+      const cx   = e.clientX - rect.left;
+      const cy   = e.clientY - rect.top + document.getElementById('page-landing').scrollTop;
+      ripples.push({ x: cx, y: cy, r: 0, alpha: 0.6 });
+      const slots = Math.min(BURST_COUNT, MAX_PARTICLES - particles.length);
+      for (let i = 0; i < slots; i++) {
+        const angle = (i / BURST_COUNT) * Math.PI * 2 + Math.random() * 0.5;
+        const speed = SPEED * (1.5 + Math.random() * 2);
+        particles.push({
+          x:  cx + (Math.random() - 0.5) * 8,
+          y:  cy + (Math.random() - 0.5) * 8,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r:  Math.random() * 1.4 + 0.6,
+        });
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (running) { resize(); makeParticles(); }
+    });
+
+    // Respect prefers-reduced-motion
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      startCanvas();
+    }
+  </script>
+</body>
+</html>

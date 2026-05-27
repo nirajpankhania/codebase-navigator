@@ -16,7 +16,8 @@ export function RepoForm() {
     setLoading(true);
     try {
       const { repo_id } = await ingestRepo(url);
-      router.push(`/chat/${repo_id}`);
+      const repoName = new URL(url).pathname.replace(/^\/|\/$/g, "");
+      router.push(`/chat/${repo_id}?repo=${encodeURIComponent(repoName)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

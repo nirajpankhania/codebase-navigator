@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { sendMessage } from "@/lib/api";
-import type { ChatResponse } from "@/lib/api";
+import type { Source } from "@/lib/api";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
 }
 
 interface ChatInterfaceProps {
@@ -39,20 +42,17 @@ export function ChatInterface({ repoId }: ChatInterfaceProps) {
     setLoading(true);
 
     try {
-      const response: ChatResponse = await sendMessage(question, repoId);
+      const response = await sendMessage(question, repoId);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: response.answer },
+        { role: "assistant", content: response.answer, sources: response.sources },
       ]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content:
-            err instanceof Error
-              ? err.message
-              : "Something went wrong. Please try again.",
+          content: err instanceof Error ? err.message : "Something went wrong. Please try again.",
         },
       ]);
     } finally {
@@ -107,6 +107,80 @@ export function ChatInterface({ repoId }: ChatInterfaceProps) {
   );
 }
 
+function MessageBubble({ message }: { message: Message }) {
+  const isUser = message.role === "user";
+
+  const uniqueSources = message.sources
+    ? Array.from(new Map(message.sources.map((s) => [s.file_path, s])).values())
+    : [];
+
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      {!isUser && (
+        <div className="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
+          <BotSmallIcon />
+        </div>
+      )}
+      <div className="flex max-w-[80%] flex-col gap-2">
+        <div
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            isUser
+              ? "rounded-br-sm bg-slate-700 text-slate-100"
+              : "rounded-bl-sm border border-slate-700/50 bg-slate-800/70 text-slate-200"
+          }`}
+        >
+          {isUser ? (
+            <p className="whitespace-pre-wrap">{message.content}</p>
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                code: ({ className, children, ...props }) => {
+                  const isBlock = className?.includes("language-");
+                  return isBlock ? (
+                    <code className="block overflow-x-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-slate-300 my-2" {...props}>
+                      {children}
+                    </code>
+                  ) : (
+                    <code className="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-xs text-violet-300" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+                pre: ({ children }) => <>{children}</>,
+                ul: ({ children }) => <ul className="mb-3 list-disc pl-5 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="mb-3 list-decimal pl-5 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="text-slate-300">{children}</li>,
+                strong: ({ children }) => <strong className="font-semibold text-slate-100">{children}</strong>,
+                h1: ({ children }) => <h1 className="mb-2 text-base font-semibold text-slate-100">{children}</h1>,
+                h2: ({ children }) => <h2 className="mb-2 text-sm font-semibold text-slate-100">{children}</h2>,
+                h3: ({ children }) => <h3 className="mb-1 text-sm font-medium text-slate-200">{children}</h3>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
+        </div>
+
+        {uniqueSources.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pl-1">
+            {uniqueSources.map((source) => (
+              <span
+                key={source.file_path}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-700/60 bg-slate-900 px-2 py-0.5 font-mono text-xs text-slate-500"
+              >
+                <FileIcon />
+                {source.file_path}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -135,28 +209,6 @@ function EmptyState({ onSuggest }: { onSuggest: (text: string) => void }) {
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
-  const isUser = message.role === "user";
-  return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      {!isUser && (
-        <div className="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
-          <BotSmallIcon />
-        </div>
-      )}
-      <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-          isUser
-            ? "rounded-br-sm bg-slate-700 text-slate-100"
-            : "rounded-bl-sm border border-slate-700/50 bg-slate-800/70 text-slate-200"
-        }`}
-      >
-        <pre className="whitespace-pre-wrap font-sans">{message.content}</pre>
-      </div>
-    </div>
-  );
-}
-
 function ThinkingBubble() {
   return (
     <div className="flex justify-start">
@@ -169,6 +221,15 @@ function ThinkingBubble() {
         <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-3" />
       </div>
     </div>
+  );
+}
+
+function FileIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
   );
 }
 
