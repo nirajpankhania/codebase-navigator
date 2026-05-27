@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChatInterface } from "@/components/ChatInterface";
+import { IngestionGate } from "@/components/IngestionGate";
 
 interface PageProps {
   params: { repoId: string };
@@ -36,7 +37,9 @@ export default function ChatPage({ params, searchParams }: PageProps) {
       </header>
 
       <div className="flex-1 overflow-hidden">
-        <ChatInterface repoId={params.repoId} />
+        <IngestionGate repoId={params.repoId}>
+          <ChatInterface repoId={params.repoId} />
+        </IngestionGate>
       </div>
     </div>
   );

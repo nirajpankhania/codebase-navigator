@@ -7,6 +7,7 @@ import tiktoken
 
 from db.queries import insert_chunks
 from services.embedding import embed_chunks
+from services.progress import set_progress
 
 _SUPPORTED_EXTENSIONS = {
     ".py", ".ts", ".tsx", ".js", ".jsx", ".md", ".txt",
@@ -73,29 +74,39 @@ def _chunk_file(content: str, file_path: str) -> list[dict]:
     return chunks
 
 
-async def ingest_repo(repo_url: str) -> str:
+async def ingest_repo(repo_url: str, repo_id: str) -> None:
     owner, repo = _parse_owner_repo(repo_url)
-    repo_id = str(uuid.uuid4())[:8]
     semaphore = asyncio.Semaphore(_FETCH_CONCURRENCY)
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        tree = await _fetch_tree(owner, repo, client)
+    try:
+        set_progress(repo_id, "fetching", "Fetching file tree from GitHub...")
+        async with httpx.AsyncClient(timeout=30) as client:
+            tree = await _fetch_tree(owner, repo, client)
 
-        async def fetch_safe(item: dict) -> list[dict]:
-            async with semaphore:
-                try:
-                    content = await _fetch_file(owner, repo, item["path"], client)
-                    return _chunk_file(content, item["path"])
-                except Exception:
-                    return []
+            set_progress(repo_id, "fetching", f"Fetching {len(tree)} files...")
 
-        results = await asyncio.gather(*[fetch_safe(item) for item in tree])
+            async def fetch_safe(item: dict) -> list[dict]:
+                async with semaphore:
+                    try:
+                        content = await _fetch_file(owner, repo, item["path"], client)
+                        return _chunk_file(content, item["path"])
+                    except Exception:
+                        return []
 
-    all_chunks = [chunk for file_chunks in results for chunk in file_chunks]
-    if not all_chunks:
-        return repo_id
+            results = await asyncio.gather(*[fetch_safe(item) for item in tree])
 
-    embeddings = await embed_chunks([c["content"] for c in all_chunks])
-    enriched = [{**chunk, "embedding": emb} for chunk, emb in zip(all_chunks, embeddings)]
-    insert_chunks(repo_id, enriched)
-    return repo_id
+        all_chunks = [chunk for file_chunks in results for chunk in file_chunks]
+        if not all_chunks:
+            set_progress(repo_id, "done", "Repository indexed — no supported files found.")
+            return
+
+        set_progress(repo_id, "embedding", f"Generating embeddings for {len(all_chunks)} chunks...")
+        embeddings = await embed_chunks([c["content"] for c in all_chunks])
+
+        set_progress(repo_id, "storing", "Storing vectors in database...")
+        enriched = [{**chunk, "embedding": emb} for chunk, emb in zip(all_chunks, embeddings)]
+        insert_chunks(repo_id, enriched)
+
+        set_progress(repo_id, "done", "Repository indexed successfully.")
+    except Exception as exc:
+        set_progress(repo_id, "error", str(exc))

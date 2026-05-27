@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes.chat import router as chat_router
 from routes.ingest import router as ingest_router
+from routes.status import router as status_router
 
 app = FastAPI(title="Codebase Navigator API")
 
@@ -16,6 +17,7 @@ app.add_middleware(
 
 app.include_router(ingest_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(status_router, prefix="/api")
 
 
 @app.get("/health")

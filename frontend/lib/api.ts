@@ -1,5 +1,10 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export interface StatusResponse {
+  status: string;
+  message: string;
+}
+
 export interface IngestResponse {
   repo_id: string;
   status: string;
@@ -26,6 +31,12 @@ export async function ingestRepo(repoUrl: string): Promise<IngestResponse> {
     const error = await res.json();
     throw new Error(error.detail ?? "Ingestion failed");
   }
+  return res.json();
+}
+
+export async function getIngestionStatus(repoId: string): Promise<StatusResponse> {
+  const res = await fetch(`${API_URL}/api/status/${repoId}`);
+  if (!res.ok) throw new Error("Failed to fetch status");
   return res.json();
 }
 

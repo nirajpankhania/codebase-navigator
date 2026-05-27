@@ -13,3 +13,5 @@ node_modules/
 
 # General
 .DS_Store
+.claude/
+preview.html

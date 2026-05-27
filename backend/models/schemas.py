@@ -11,6 +11,11 @@ class IngestResponse(BaseModel):
     message: str
 
 
+class StatusResponse(BaseModel):
+    status: str
+    message: str
+
+
 class Source(BaseModel):
     file_path: str
     snippet: str
