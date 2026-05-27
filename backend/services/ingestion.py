@@ -1,11 +1,10 @@
 import asyncio
 import os
-import uuid
 
 import httpx
 import tiktoken
 
-from db.queries import insert_chunks
+from db.queries import delete_chunks, insert_chunks
 from services.embedding import embed_chunks
 from services.progress import set_progress
 
@@ -79,6 +78,7 @@ async def ingest_repo(repo_url: str, repo_id: str) -> None:
     semaphore = asyncio.Semaphore(_FETCH_CONCURRENCY)
 
     try:
+        delete_chunks(repo_id)
         set_progress(repo_id, "fetching", "Fetching file tree from GitHub...")
         async with httpx.AsyncClient(timeout=30) as client:
             tree = await _fetch_tree(owner, repo, client)

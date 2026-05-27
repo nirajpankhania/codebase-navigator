@@ -3,6 +3,11 @@ from db.client import get_client
 _INSERT_BATCH = 100
 
 
+def delete_chunks(repo_id: str) -> None:
+    client = get_client()
+    client.table("chunks").delete().eq("repo_id", repo_id).execute()
+
+
 def insert_chunks(repo_id: str, chunks: list[dict]) -> None:
     client = get_client()
     for i in range(0, len(chunks), _INSERT_BATCH):

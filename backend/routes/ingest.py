@@ -1,4 +1,4 @@
-import uuid
+import hashlib
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
@@ -16,7 +16,7 @@ async def ingest(request: IngestRequest, background_tasks: BackgroundTasks) -> I
             status_code=400, detail="URL must be a valid GitHub repository URL"
         )
 
-    repo_id = str(uuid.uuid4())[:8]
+    repo_id = hashlib.md5(request.repo_url.strip().lower().encode()).hexdigest()[:12]
     set_progress(repo_id, "pending", "Starting ingestion...")
     background_tasks.add_task(ingest_repo, request.repo_url, repo_id)
 
