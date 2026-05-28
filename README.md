@@ -1,14 +1,28 @@
 # Codebase Navigator
 
-An AI-powered tool that lets you chat with any public GitHub repository. Paste a URL, wait for it to be indexed, then ask questions in plain English — "how does authentication work?", "what are the main entry points?", "walk me through the request lifecycle."
+An AI-powered tool that lets you chat with any public GitHub repository. Paste a URL, wait for it to be indexed, then ask questions in plain English — "how does authentication work?", "what are the main entry points?", "walk me through the request lifecycle." You can also explore the repo's structure visually as an interactive graph.
 
-> **Live demo:** _coming soon_
+> **Live demo:** [codebase-navigator-five.vercel.app](https://codebase-navigator-five.vercel.app)
+
+---
+
+## Motivation
+
+Most AI-assisted development workflows today follow the same pattern: make some changes, then paste your code into a chat window for a bulk review. That works, but it lacks granularity. You're handing over a snapshot and waiting for a verdict, rather than building an understanding incrementally.
+
+What I wanted was something different — a way to give an AI a genuine semantic understanding of a codebase, so that as you're stepping through code and asking questions, the answers are grounded in the actual structure and logic of the project rather than general knowledge.
+
+There's also a real problem with long-running chat sessions: context fills up. You ask questions, get answers, the conversation grows — and eventually you hit the limit and have to start over, re-explaining the codebase from scratch. That friction is especially bad when you're deep in a debugging session or trying to understand a tricky dependency chain.
+
+Codebase Navigator is an attempt to solve both of those things. Index once, ask anything. The context doesn't degrade because the retrieval is always pulling from the source — not from a compressed summary of a previous conversation.
 
 ---
 
 ## What it does
 
-Most developers read code by jumping between files, grepping for symbols, and slowly building a mental model. Codebase Navigator skips that. It reads every source file in a repo, breaks it into overlapping chunks, turns each chunk into a vector embedding (a list of numbers that captures meaning), and stores everything in a database. When you ask a question, it finds the most relevant chunks using vector similarity search and feeds them to an LLM — which answers based only on the actual code, not hallucinated knowledge.
+Codebase Navigator reads every source file in a repo, breaks it into overlapping chunks, turns each chunk into a vector embedding (a list of numbers that captures meaning), and stores everything in a database. When you ask a question, it finds the most relevant chunks using vector similarity search and feeds them to an LLM — which answers based only on the actual code, not hallucinated knowledge.
+
+Alongside the chat interface, an interactive D3 graph lets you explore the repo's file and directory structure visually — color-coded by file type, with zoom, pan, drag, click-to-focus, and search.
 
 This is called **Retrieval-Augmented Generation (RAG)**.
 
@@ -23,6 +37,7 @@ Browser
   │     │
   │     └─ POST /api/ingest  ──►  FastAPI backend
   │                                    │
+  │                                    ├─ Delete existing chunks for this repo (deduplication)
   │                                    ├─ GitHub API: fetch file tree
   │                                    ├─ raw.githubusercontent.com: fetch each file
   │                                    ├─ tiktoken: split files into 400-token chunks
@@ -31,15 +46,20 @@ Browser
   │
   ├─ Chat page: polls GET /api/status/{repo_id} until indexing is done
   │
-  └─ Chat page: user asks a question
+  ├─ Chat page: user asks a question
+  │     │
+  │     └─ POST /api/chat  ──►  FastAPI backend
+  │                                    │
+  │                                    ├─ OpenAI text-embedding-3-small: embed the question
+  │                                    ├─ Supabase match_chunks RPC: find top 10 similar chunks
+  │                                    │   + second search anchored on README/overview content
+  │                                    ├─ GPT-4o-mini: answer using retrieved chunks as context
+  │                                    └─ Response: answer + list of source files cited
+  │
+  └─ Architecture tab: GET /api/graph/{repo_id}
         │
-        └─ POST /api/chat  ──►  FastAPI backend
-                                    │
-                                    ├─ OpenAI text-embedding-3-small: embed the question
-                                    ├─ Supabase match_chunks RPC: find top 10 similar chunks
-                                    │   + second search anchored on README/overview content
-                                    ├─ GPT-4o-mini: answer using retrieved chunks as context
-                                    └─ Response: answer + list of source files cited
+        └─ FastAPI builds node/link tree from stored file paths
+           D3.js renders force-directed graph in the browser
 ```
 
 The frontend never talks to OpenAI or Supabase directly — everything goes through the FastAPI backend.
@@ -55,6 +75,7 @@ The frontend never talks to OpenAI or Supabase directly — everything goes thro
 | Database | Supabase (Postgres + pgvector) | Vector similarity search at zero cost |
 | Embeddings | OpenAI `text-embedding-3-small` | Better than ada-002, cheaper |
 | Chat | OpenAI `gpt-4o-mini` | Sufficient quality at a fraction of GPT-4o cost |
+| Graph | D3.js | Force-directed layout, zoom/pan/drag, reactive filtering |
 | Deployment | Vercel (frontend) + Render (backend) | Free tiers, simple CI |
 
 ---
@@ -71,17 +92,18 @@ codebase-navigator/
 │   ├── routes/
 │   │   ├── ingest.py             # POST /api/ingest — validates URL, fires background ingestion, returns repo_id immediately
 │   │   ├── chat.py               # POST /api/chat — takes a question + repo_id, returns answer + sources
-│   │   └── status.py             # GET /api/status/{repo_id} — returns current ingestion progress
+│   │   ├── status.py             # GET /api/status/{repo_id} — returns current ingestion progress
+│   │   └── graph.py              # GET /api/graph/{repo_id} — builds node/link tree from stored file paths
 │   │
 │   ├── services/
 │   │   ├── ingestion.py          # Core ingestion pipeline: fetch → chunk → embed → store
 │   │   ├── embedding.py          # Thin wrapper around OpenAI embeddings API (batched)
-│   │   ├── rag.py                # RAG pipeline: embed question → similarity search → GPT answer
+│   │   ├── rag.py                # RAG pipeline: embed question → dual similarity search → GPT answer
 │   │   └── progress.py           # In-memory store for ingestion progress state per repo_id
 │   │
 │   ├── db/
 │   │   ├── client.py             # Supabase client singleton
-│   │   └── queries.py            # insert_chunks() and similarity_search() — all DB access lives here
+│   │   └── queries.py            # delete_chunks(), insert_chunks(), get_file_paths(), similarity_search()
 │   │
 │   └── models/
 │       └── schemas.py            # Pydantic request/response models for all endpoints
@@ -91,16 +113,18 @@ codebase-navigator/
 │   │   ├── layout.tsx            # Root layout — sets fonts and global styles
 │   │   ├── page.tsx              # Landing page — hero, repo URL form, "how it works" section
 │   │   └── chat/[repoId]/
-│   │       └── page.tsx          # Chat page — header with repo name, wraps ChatInterface in IngestionGate
+│   │       └── page.tsx          # Chat page — header with repo name, wraps content in IngestionGate
 │   │
 │   ├── components/
 │   │   ├── RepoForm.tsx          # URL input form — calls ingestRepo(), redirects immediately to chat page
 │   │   ├── ParticleCanvas.tsx    # Animated particle background on the landing page
 │   │   ├── IngestionGate.tsx     # Polls /api/status every 2s, shows step-by-step progress until done
-│   │   └── ChatInterface.tsx     # Full chat UI — sends messages, renders markdown responses, shows source chips
+│   │   ├── ChatPageContent.tsx   # Tab switcher between Chat and Architecture views
+│   │   ├── ChatInterface.tsx     # Full chat UI — sends messages, renders markdown responses, shows source chips
+│   │   └── RepoGraph.tsx         # D3 force-directed graph — color by extension, zoom/pan/drag/search/focus
 │   │
 │   └── lib/
-│       └── api.ts                # All fetch calls to the backend — ingestRepo(), sendMessage(), getIngestionStatus()
+│       └── api.ts                # All fetch calls to the backend
 │
 ├── supabase/
 │   └── schema.sql                # Run once in Supabase SQL editor to create the chunks table and match_chunks function
@@ -115,11 +139,12 @@ codebase-navigator/
 ### Ingestion flow
 
 1. `RepoForm.tsx` calls `ingestRepo()` in `lib/api.ts`, which POSTs to `/api/ingest`
-2. `routes/ingest.py` generates a random `repo_id`, writes `"pending"` to the progress store, and fires `ingest_repo()` as a FastAPI background task — returning the `repo_id` to the frontend immediately
+2. `routes/ingest.py` generates a stable `repo_id` (MD5 hash of the URL), writes `"pending"` to the progress store, and fires `ingest_repo()` as a FastAPI background task — returning the `repo_id` immediately
 3. `services/ingestion.py` runs the pipeline:
-   - Hits the GitHub API to get the full file tree, filtered to supported extensions (`.py`, `.ts`, `.js`, `.md`, etc.) and skipping junk directories (`node_modules`, `.venv`, `dist`, etc.)
+   - Deletes any existing chunks for this `repo_id` first (so re-ingesting the same URL never creates duplicates)
+   - Hits the GitHub API to get the full file tree, filtered to supported extensions and skipping junk directories
    - Fetches each file from `raw.githubusercontent.com` with up to 10 concurrent requests
-   - Splits each file into 400-token chunks with 50-token overlap using tiktoken (so context isn't lost at chunk boundaries)
+   - Splits each file into 400-token chunks with 50-token overlap using tiktoken
    - Writes progress updates throughout: `"fetching"` → `"embedding"` → `"storing"` → `"done"`
 4. `services/embedding.py` sends all chunks to `text-embedding-3-small` in batches of 512
 5. `db/queries.py` inserts each chunk (file path + content + 1536-dimensional embedding vector) into Supabase in batches of 100
@@ -127,8 +152,8 @@ codebase-navigator/
 ### Progress tracking
 
 - `services/progress.py` is a simple in-memory Python dict: `{ repo_id: { status, message } }`
-- `routes/status.py` reads from it — returns `"ready"` for unknown repo IDs (i.e. repos ingested in a previous server session that are still in Supabase)
-- `IngestionGate.tsx` polls this endpoint every 2 seconds and renders a step indicator until status is `"done"` or `"ready"`, then unmounts and shows the chat interface
+- `routes/status.py` reads from it — returns `"ready"` for unknown repo IDs (repos ingested in a previous server session that are still in Supabase)
+- `IngestionGate.tsx` polls this endpoint every 2 seconds and renders a step indicator until status is `"done"` or `"ready"`, then unmounts and shows the main content
 
 ### Chat / RAG flow
 
@@ -138,9 +163,19 @@ codebase-navigator/
    - One for the user's question directly
    - One anchored on a broad "project overview readme description" query — so questions like "what does this repo do?" always pull in README content
    - Results are deduplicated and combined (up to ~14 chunks total)
-4. The chunks are formatted as context and sent to `gpt-4o-mini` with a system prompt that instructs it to answer only from the provided code — not from prior knowledge
+4. The chunks are formatted as context and sent to `gpt-4o-mini` with a system prompt that instructs it to answer only from the provided code
 5. The response comes back with an `answer` string and a `sources` array (file paths + snippets)
-6. `ChatInterface.tsx` renders the answer with `react-markdown` (so code blocks, bold text etc. look right) and shows the source files as small chips below each message
+6. `ChatInterface.tsx` renders the answer with `react-markdown` and shows source files as chips below each message
+
+### Architecture graph
+
+1. Switching to the Architecture tab calls `getGraph()` in `lib/api.ts`, which hits `GET /api/graph/{repo_id}`
+2. `routes/graph.py` reads the distinct file paths already stored in Supabase and builds a node/link tree from them — no extra storage needed
+3. `RepoGraph.tsx` renders this with D3 as a force-directed graph:
+   - Nodes are color-coded by file extension, sized by type (root > directory > file)
+   - Zoom, pan, and drag work out of the box
+   - Clicking any node highlights its full subtree and ancestor path, dimming everything else
+   - The search bar filters nodes by name in real time
 
 ---
 
@@ -219,6 +254,7 @@ Open `http://localhost:3000`.
 | `SUPABASE_SERVICE_KEY` | backend `.env` | Yes | Service role key — bypasses RLS |
 | `GITHUB_TOKEN` | backend `.env` | No | Personal access token — increases API rate limit |
 | `NEXT_PUBLIC_API_URL` | frontend `.env.local` | Yes | URL of the FastAPI backend |
+| `ALLOWED_ORIGIN` | backend (Render env) | Production | Frontend URL — added to CORS allowed origins |
 
 ---
 
@@ -234,7 +270,10 @@ Files over 200KB and directories like `node_modules`, `.venv`, `dist`, `build`, 
 
 ## Roadmap
 
-- [ ] D3.js interactive architecture graph — visualise the repo's file/module structure
+- [x] RAG chat pipeline with dual parallel search
+- [x] Live ingestion progress indicator
+- [x] D3 interactive architecture graph with search and click-to-focus
+- [x] Deduplication — re-ingesting the same URL clears old data rather than stacking duplicates
+- [x] Deployment — Vercel (frontend) + Render (backend)
 - [ ] Auto-generated README — produce a structured summary of any ingested repo
-- [ ] Deduplication — re-ingesting the same URL reuses the existing repo_id instead of creating duplicate rows
-- [ ] Deployment — Vercel (frontend) + Render (backend)
+- [ ] Private repo support via GitHub OAuth
