@@ -8,9 +8,9 @@ An AI-powered tool that lets you chat with any public GitHub repository. Paste a
 
 ## Motivation
 
-With the prevalence of tools like claude code, you find that some people's workflow is very detached from the coding itself. You prompt, wait and then bulk review the changes (for some not even this step). For me that felt a bit too disconnected and i like the granularity of going back and forth implementing one change at a time. The alternative often is to use a chat window to assist with one thing at a time. Its slower and often time lacks an overall understanding of your code.
+With the prevalence of tools like claude code, you find that some people's workflow is very detached from the coding itself. You prompt, wait and then bulk review the changes (for some not even this step). For me that felt a bit too disconnected and i like the granularity of going back and forth implementing one change at a time. The alternative often is to use a chat window to assist with one thing at a time. It's slower and often time lacks an overall understanding of your code.
 
-Also, with this alternative, you encounter another issue. Context fills up, once it finally does understand your code a chat may need to be started anew and re-educated to get up and running again. This felt slow and was a pain point for me. This friction feels especially bad when your deep in a session.
+Also, with this alternative, you encounter another issue. Context fills up, once it finally does understand your code a chat may need to be started anew and re-educated to get up and running again. This felt slow and was a pain point for me. This friction feels especially bad when you're deep in a session.
 
 My answer was this. Something that gives AI a genuine semantic understanding of a codebase without it living amongst your files. You can index and ask, which is good for user understanding but also for any assisting agents.
 
