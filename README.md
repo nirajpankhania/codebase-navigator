@@ -8,13 +8,11 @@ An AI-powered tool that lets you chat with any public GitHub repository. Paste a
 
 ## Motivation
 
-Most AI-assisted development workflows today follow the same pattern: make some changes, then paste your code into a chat window for a bulk review. That works, but it lacks granularity. You're handing over a snapshot and waiting for a verdict, rather than building an understanding incrementally.
+With the prevalence of tools like claude code, you find that some people's workflow is very detached from the coding itself. You prompt, wait and then bulk review the changes (for some not even this step). For me that felt a bit too disconnected and i like the granularity of going back and forth implementing one change at a time. The alternative often is to use a chat window to assist with one thing at a time. Its slower and often time lacks an overall understanding of your code.
 
-What I wanted was something different — a way to give an AI a genuine semantic understanding of a codebase, so that as you're stepping through code and asking questions, the answers are grounded in the actual structure and logic of the project rather than general knowledge.
+Also, with this alternative, you encounter another issue. Context fills up, once it finally does understand your code a chat may need to be started anew and re-educated to get up and running again. This felt slow and was a pain point for me. This friction feels especially bad when your deep in a session.
 
-There's also a real problem with long-running chat sessions: context fills up. You ask questions, get answers, the conversation grows — and eventually you hit the limit and have to start over, re-explaining the codebase from scratch. That friction is especially bad when you're deep in a debugging session or trying to understand a tricky dependency chain.
-
-Codebase Navigator is an attempt to solve both of those things. Index once, ask anything. The context doesn't degrade because the retrieval is always pulling from the source — not from a compressed summary of a previous conversation.
+My answer was this. Something that gives AI a genuine semantic understanding of a codebase without it living amongst your files. You can index and ask, which is good for user understanding but also for any assisting agents.
 
 ---
 
