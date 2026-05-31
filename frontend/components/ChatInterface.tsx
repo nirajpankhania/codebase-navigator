@@ -176,7 +176,7 @@ function TypewriterContent({ content, animate }: { content: string; animate: boo
 
   if (!done) {
     return (
-      <div className="whitespace-pre-wrap font-mono text-xs text-[#1c1a14]">
+      <div className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-[#1c1a14]">
         {displayed}
         <span className="animate-nier-cursor ml-0.5 inline-block h-3 w-1.5 bg-[#1c1a14]" />
       </div>
@@ -187,7 +187,7 @@ function TypewriterContent({ content, animate }: { content: string; animate: boo
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        p:      ({ children }) => <p className="mb-3 text-xs last:mb-0">{children}</p>,
+        p:      ({ children }) => <p className="mb-3 font-mono text-[13px] leading-relaxed last:mb-0">{children}</p>,
         code:   ({ className, children, ...props }) => {
           const block = className?.includes("language-");
           return block ? (
@@ -197,9 +197,9 @@ function TypewriterContent({ content, animate }: { content: string; animate: boo
           );
         },
         pre:    ({ children }) => <>{children}</>,
-        ul:     ({ children }) => <ul className="mb-3 list-none pl-4 space-y-1 text-xs [&>li]:before:content-['·_'] [&>li]:before:text-[#5a5545]">{children}</ul>,
-        ol:     ({ children }) => <ol className="mb-3 list-decimal pl-5 space-y-1 text-xs text-[#5a5545] marker:text-[#5a5545]">{children}</ol>,
-        li:     ({ children }) => <li className="text-[#2a2818] text-xs">{children}</li>,
+        ul:     ({ children }) => <ul className="mb-3 list-none pl-4 space-y-1 font-mono text-[13px] [&>li]:before:content-['·_'] [&>li]:before:text-[#5a5545]">{children}</ul>,
+        ol:     ({ children }) => <ol className="mb-3 list-decimal pl-5 space-y-1 font-mono text-[13px] text-[#5a5545] marker:text-[#5a5545]">{children}</ol>,
+        li:     ({ children }) => <li className="font-mono text-[13px] text-[#2a2818]">{children}</li>,
         strong: ({ children }) => <strong className="font-semibold text-[#1c1a14]">{children}</strong>,
         h1:     ({ children }) => <h1 className="mb-2 font-mono text-xs uppercase tracking-widest text-[#1c1a14]">{children}</h1>,
         h2:     ({ children }) => <h2 className="mb-2 font-mono text-xs uppercase tracking-widest text-[#1c1a14]">{children}</h2>,
