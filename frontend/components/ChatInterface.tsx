@@ -65,21 +65,23 @@ export function ChatInterface({ repoId }: ChatInterfaceProps) {
 
   return (
     <div className="flex h-full flex-col bg-[#d8d3be]">
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
-        {messages.length === 0 ? (
-          <EmptyState onSuggest={setInput} />
-        ) : (
-          messages.map((msg, i) => (
-            <MessageBubble key={msg.id} message={msg} isNewest={i === messages.length - 1} />
-          ))
-        )}
-        {loading && <ThinkingBubble />}
-        <div ref={bottomRef} />
+      <div className="flex-1 overflow-y-auto px-4 py-5">
+        <div className="mx-auto flex max-w-[660px] flex-col gap-3.5">
+          {messages.length === 0 ? (
+            <EmptyState onSuggest={setInput} />
+          ) : (
+            messages.map((msg, i) => (
+              <MessageBubble key={msg.id} message={msg} isNewest={i === messages.length - 1} />
+            ))
+          )}
+          {loading && <ThinkingBubble />}
+          <div ref={bottomRef} />
+        </div>
       </div>
 
       {/* Input bar */}
       <div className="shrink-0 border-t border-[#8a8575]/30 bg-[#ccc7b2]/90 p-4 backdrop-blur-sm">
-        <form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl items-center gap-3">
+        <form onSubmit={handleSubmit} className="mx-auto flex max-w-[660px] items-center gap-1.5">
           <input
             type="text"
             value={input}
@@ -87,15 +89,14 @@ export function ChatInterface({ repoId }: ChatInterfaceProps) {
             onKeyDown={handleKeyDown}
             placeholder="ENTER QUERY..."
             disabled={loading}
-            className="flex-1 border border-[#8a8575] bg-[#ccc7b2] px-4 py-3 font-mono text-sm text-[#1c1a14] placeholder-[#8a8575] transition-colors duration-200 focus:border-[#5a5545] focus:outline-none focus:ring-1 focus:ring-[#5a5545]/20 disabled:opacity-50"
+            className="flex-1 border border-[#8a8575] bg-[#ccc7b2] px-3.5 py-[10px] font-mono text-[12px] text-[#1c1a14] placeholder-[#8a8575] placeholder:uppercase placeholder:tracking-[0.05em] transition-colors duration-200 [border-left:3px_solid_#8a8575] focus:[border-left:3px_solid_#c8a84b] focus:border-[#c8a84b] focus:bg-[#d8d3be] focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="flex items-center gap-1.5 border border-[#c8a84b]/60 bg-[#c8a84b]/10 px-5 py-3 font-mono text-xs uppercase tracking-widest text-[#c8a84b] transition-all duration-200 hover:bg-[#c8a84b]/20 focus:outline-none disabled:cursor-not-allowed disabled:border-[#2e2b1e] disabled:bg-transparent disabled:text-[#4a4535]"
+            className="flex items-center gap-1.5 border border-[#26211a] bg-[#26211a] px-4 py-[10px] font-mono text-[10px] uppercase tracking-[0.14em] text-[#d8d3be] transition-colors duration-200 hover:bg-[#38322a] focus:outline-none disabled:cursor-not-allowed disabled:border-[#8a8575]/40 disabled:bg-[#ccc7b2] disabled:text-[#8a8575]"
           >
-            SEND
-            <SendIcon />
+            SEND <span className="text-[#c8a84b]">▶</span>
           </button>
         </form>
         <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8a8575]">
@@ -115,21 +116,21 @@ function MessageBubble({ message, isNewest }: { message: Message; isNewest: bool
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
-        <div className="mr-3 mt-1 flex h-6 w-6 shrink-0 items-center justify-center border border-[#c8a84b]/40 bg-[#c8a84b]/5 font-mono text-[9px] text-[#c8a84b]">
-          2B
+        <div className="mr-2 mt-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center border border-[#8a8575] bg-[#ccc7b2] font-mono text-[8px] tracking-[0.06em] text-[#5a5545]">
+          AI
         </div>
       )}
-      <div className="flex max-w-[82%] flex-col gap-2">
+      <div className="flex max-w-[68%] flex-col gap-2">
         <div
-          className={`relative px-4 py-3 text-sm leading-relaxed ${
+          className={`relative text-sm leading-relaxed ${
             isUser
-              ? "bg-[#26211a] text-[#d8d3be] border-r-2 border-[#c8a84b]/60"
-              : "border border-[#8a8575]/40 bg-[#ccc7b2] text-[#1c1a14]"
+              ? "flex items-start gap-2 bg-[#26211a] px-3.5 py-2.5 text-[#d8d3be] [border-left:3px_solid_#c8a84b]"
+              : "border border-[#8a8575]/50 bg-[#ccc7b2] px-3.5 py-2.5 text-[#1c1a14] [border-left:3px_solid_#8a8575]"
           }`}
         >
-          {!isUser && <NierCorners accent="#c8a84b40" size={8} />}
+          {isUser && <span className="mt-1 inline-block h-[7px] w-[7px] shrink-0 bg-[#d8d3be]" />}
           {isUser ? (
-            <p className="whitespace-pre-wrap font-mono text-xs">{message.content}</p>
+            <p className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed">{message.content}</p>
           ) : (
             <TypewriterContent content={message.content} animate={isNewest} />
           )}
@@ -246,13 +247,18 @@ function EmptyState({ onSuggest }: { onSuggest: (t: string) => void }) {
 function ThinkingBubble() {
   return (
     <div className="flex justify-start">
-      <div className="mr-3 mt-1 flex h-6 w-6 shrink-0 items-center justify-center border border-[#c8a84b]/40 bg-[#c8a84b]/5 font-mono text-[9px] text-[#c8a84b]">
-        2B
+      <div className="mr-2 mt-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center border border-[#8a8575] bg-[#ccc7b2] font-mono text-[8px] tracking-[0.06em] text-[#5a5545]">
+        AI
       </div>
-      <div className="flex items-end gap-1 border border-[#2e2b1e] bg-[#111108] px-4 py-3.5">
-        <span className="animate-thinking-1 inline-block h-3 w-1 bg-[#c8a84b]" />
-        <span className="animate-thinking-2 inline-block h-3 w-1 bg-[#c8a84b]" />
-        <span className="animate-thinking-3 inline-block h-3 w-1 bg-[#c8a84b]" />
+      <div className="border border-[#8a8575]/50 bg-[#ccc7b2] px-3.5 py-2.5 [border-left:3px_solid_#8a8575]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-end gap-[3px]" style={{ height: 16 }}>
+            <span className="animate-thinking-1 inline-block w-[3px] origin-bottom bg-[#1c1a14]" style={{ height: 16 }} />
+            <span className="animate-thinking-2 inline-block w-[3px] origin-bottom bg-[#1c1a14]" style={{ height: 16 }} />
+            <span className="animate-thinking-3 inline-block w-[3px] origin-bottom bg-[#1c1a14]" style={{ height: 16 }} />
+          </div>
+          <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#8a8575]">PROCESSING QUERY...</span>
+        </div>
       </div>
     </div>
   );
