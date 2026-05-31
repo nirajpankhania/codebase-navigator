@@ -75,7 +75,7 @@ export function IngestionGate({ repoId, children }: IngestionGateProps) {
           <p className="mb-6 max-w-sm font-mono text-xs text-[#8a8575]">{message}</p>
           <a
             href="/"
-            className="border border-[#8a8575]/40 bg-[#1a1610] px-6 py-2 font-mono text-xs uppercase tracking-widest text-[#8a8575] transition-colors hover:border-[#c8a84b] hover:text-[#c8a84b]"
+            className="border border-white/15 bg-[#1a1610] px-6 py-2 font-mono text-xs uppercase tracking-widest text-[#d8d3be]/50 transition-colors hover:border-white/30 hover:text-[#d8d3be]"
           >
             ← RETURN
           </a>
@@ -93,12 +93,12 @@ export function IngestionGate({ repoId, children }: IngestionGateProps) {
       {/* HUD overlay */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6">
         <div className="relative border border-[#8a8575]/40 bg-[#26211a]/88 p-4 backdrop-blur-sm sm:p-5">
-          <NierCorners accent="#c8a84b" size={10} />
+          <NierCorners accent="rgba(216,211,190,0.25)" size={10} />
 
           {/* Status line */}
           <div className="mb-2 flex items-center gap-3">
-            <span className="animate-nier-pulse font-mono text-[10px] text-[#c8a84b]">■</span>
-            <span className="font-mono text-xs uppercase tracking-widest text-[#e8e4d0]">
+            <span className="animate-nier-pulse font-mono text-[10px] text-[#d8d3be]/70">■</span>
+            <span className="font-mono text-xs uppercase tracking-widest text-[#d8d3be]">
               INDEXING REPOSITORY
             </span>
           </div>
@@ -113,10 +113,10 @@ export function IngestionGate({ repoId, children }: IngestionGateProps) {
                 <div
                   className={`flex h-5 w-14 items-center justify-center font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 ${
                     i < ci
-                      ? "bg-[#c8a84b] text-[#0a0a08]"
+                      ? "bg-[#d8d3be] text-[#26211a]"
                       : i === ci
-                      ? "border border-[#c8a84b] text-[#c8a84b]"
-                      : "border border-[#2e2b1e] text-[#4a4535]"
+                      ? "border border-[#d8d3be]/60 text-[#d8d3be]"
+                      : "border border-white/10 text-[#d8d3be]/30"
                   }`}
                 >
                   {i < ci ? "✓" : PHASE_LABELS[phase]}
@@ -124,7 +124,7 @@ export function IngestionGate({ repoId, children }: IngestionGateProps) {
                 {i < PHASE_ORDER.length - 2 && (
                   <div
                     className={`h-px w-3 transition-colors duration-500 ${
-                      i < ci - 1 ? "bg-[#c8a84b]" : "bg-[#2e2b1e]"
+                      i < ci - 1 ? "bg-[#d8d3be]/60" : "bg-white/10"
                     }`}
                   />
                 )}

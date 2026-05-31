@@ -11,30 +11,30 @@ export default function ChatPage({ params, searchParams }: PageProps) {
   const repoLabel = searchParams.repo ?? params.repoId;
 
   return (
-    <div className="flex h-screen flex-col bg-[#d8d3be] text-[#e8e4d0]">
+    <div className="flex h-screen flex-col bg-[#d8d3be] text-[#d8d3be]">
       {/* Header */}
-      <header className="flex shrink-0 items-center gap-4 border-b border-[#c8a84b]/20 bg-[#26211a] px-5 py-3">
+      <header className="flex shrink-0 items-center gap-4 border-b border-white/8 bg-[#26211a] px-5 py-3">
         <Link
           href="/"
-          className="flex items-center justify-center border border-[#c8a84b]/20 p-1.5 text-[#7a7560] transition-colors duration-200 hover:border-[#c8a84b]/40 hover:text-[#c8a84b]"
+          className="flex items-center justify-center border border-white/15 p-1.5 text-[#7a7560] transition-colors duration-200 hover:border-white/30 hover:text-[#d8d3be]"
         >
           <BackIcon />
         </Link>
 
-        <div className="h-4 w-px bg-[#2e2b1e]" />
+        <div className="h-4 w-px bg-white/10" />
 
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center border border-[#c8a84b]/30 bg-[#c8a84b]/5 font-mono text-[9px] text-[#c8a84b]">
+          <div className="flex h-6 w-6 items-center justify-center border border-white/15 font-mono text-[9px] text-[#d8d3be]/60">
             ◆
           </div>
-          <span className="font-mono text-xs uppercase tracking-widest text-[#e8e4d0]">
+          <span className="font-mono text-xs uppercase tracking-widest text-[#d8d3be]">
             Codebase Navigator
           </span>
         </div>
 
-        <div className="ml-auto flex items-center gap-2 border border-[#c8a84b]/20 bg-[#1a1610] px-3 py-1.5">
-          <span className="animate-nier-pulse h-1.5 w-1.5 bg-[#c8a84b]" />
-          <code className="max-w-[240px] truncate font-mono text-[11px] text-[#7a7560]">
+        <div className="ml-auto flex items-center gap-2 border border-white/10 bg-black/20 px-3 py-1.5">
+          <span className="animate-nier-pulse inline-block h-1.5 w-1.5 bg-[#d8d3be]/60" />
+          <code className="max-w-[240px] truncate font-mono text-[11px] text-[#d8d3be]/50">
             {repoLabel}
           </code>
         </div>

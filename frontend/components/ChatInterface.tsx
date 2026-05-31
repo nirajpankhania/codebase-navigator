@@ -89,14 +89,14 @@ export function ChatInterface({ repoId }: ChatInterfaceProps) {
             onKeyDown={handleKeyDown}
             placeholder="ENTER QUERY..."
             disabled={loading}
-            className="flex-1 border border-[#8a8575] bg-[#ccc7b2] px-3.5 py-[10px] font-mono text-[12px] text-[#1c1a14] placeholder-[#8a8575] placeholder:uppercase placeholder:tracking-[0.05em] transition-colors duration-200 [border-left:3px_solid_#8a8575] focus:[border-left:3px_solid_#c8a84b] focus:border-[#c8a84b] focus:bg-[#d8d3be] focus:outline-none disabled:opacity-50"
+            className="flex-1 border border-[#8a8575] bg-[#ccc7b2] px-3.5 py-[10px] font-mono text-[12px] text-[#1c1a14] placeholder-[#8a8575] placeholder:uppercase placeholder:tracking-[0.05em] transition-colors duration-200 [border-left:3px_solid_#8a8575] focus:[border-left:3px_solid_#5a5545] focus:border-[#5a5545] focus:bg-[#d8d3be] focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
             className="flex items-center gap-1.5 border border-[#26211a] bg-[#26211a] px-4 py-[10px] font-mono text-[10px] uppercase tracking-[0.14em] text-[#d8d3be] transition-colors duration-200 hover:bg-[#38322a] focus:outline-none disabled:cursor-not-allowed disabled:border-[#8a8575]/40 disabled:bg-[#ccc7b2] disabled:text-[#8a8575]"
           >
-            SEND <span className="text-[#c8a84b]">▶</span>
+            SEND ▶
           </button>
         </form>
         <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-widest text-[#8a8575]">
@@ -124,7 +124,7 @@ function MessageBubble({ message, isNewest }: { message: Message; isNewest: bool
         <div
           className={`relative text-sm leading-relaxed ${
             isUser
-              ? "flex items-start gap-2 bg-[#26211a] px-3.5 py-2.5 text-[#d8d3be] [border-left:3px_solid_#c8a84b]"
+              ? "flex items-start gap-2 bg-[#26211a] px-3.5 py-2.5 text-[#d8d3be] [border-left:3px_solid_#d8d3be]"
               : "border border-[#8a8575]/50 bg-[#ccc7b2] px-3.5 py-2.5 text-[#1c1a14] [border-left:3px_solid_#8a8575]"
           }`}
         >
@@ -178,7 +178,7 @@ function TypewriterContent({ content, animate }: { content: string; animate: boo
     return (
       <div className="whitespace-pre-wrap font-mono text-xs text-[#1c1a14]">
         {displayed}
-        <span className="animate-nier-cursor ml-0.5 inline-block h-3 w-1.5 bg-[#c8a84b]" />
+        <span className="animate-nier-cursor ml-0.5 inline-block h-3 w-1.5 bg-[#1c1a14]" />
       </div>
     );
   }
@@ -197,13 +197,13 @@ function TypewriterContent({ content, animate }: { content: string; animate: boo
           );
         },
         pre:    ({ children }) => <>{children}</>,
-        ul:     ({ children }) => <ul className="mb-3 list-none pl-4 space-y-1 text-xs [&>li]:before:content-['·_'] [&>li]:before:text-[#c8a84b]">{children}</ul>,
-        ol:     ({ children }) => <ol className="mb-3 list-decimal pl-5 space-y-1 text-xs text-[#7a7560] marker:text-[#c8a84b]">{children}</ol>,
+        ul:     ({ children }) => <ul className="mb-3 list-none pl-4 space-y-1 text-xs [&>li]:before:content-['·_'] [&>li]:before:text-[#5a5545]">{children}</ul>,
+        ol:     ({ children }) => <ol className="mb-3 list-decimal pl-5 space-y-1 text-xs text-[#5a5545] marker:text-[#5a5545]">{children}</ol>,
         li:     ({ children }) => <li className="text-[#2a2818] text-xs">{children}</li>,
         strong: ({ children }) => <strong className="font-semibold text-[#1c1a14]">{children}</strong>,
-        h1:     ({ children }) => <h1 className="mb-2 font-mono text-xs uppercase tracking-widest text-[#c8a84b]">{children}</h1>,
-        h2:     ({ children }) => <h2 className="mb-2 font-mono text-xs uppercase tracking-widest text-[#c8a84b]">{children}</h2>,
-        h3:     ({ children }) => <h3 className="mb-1 font-mono text-[11px] uppercase tracking-wider text-[#c8a84b]/80">{children}</h3>,
+        h1:     ({ children }) => <h1 className="mb-2 font-mono text-xs uppercase tracking-widest text-[#1c1a14]">{children}</h1>,
+        h2:     ({ children }) => <h2 className="mb-2 font-mono text-xs uppercase tracking-widest text-[#1c1a14]">{children}</h2>,
+        h3:     ({ children }) => <h3 className="mb-1 font-mono text-[11px] uppercase tracking-wider text-[#5a5545]">{children}</h3>,
       }}
     >
       {content}
@@ -234,7 +234,7 @@ function EmptyState({ onSuggest }: { onSuggest: (t: string) => void }) {
           <button
             key={s}
             onClick={() => onSuggest(s)}
-            className="border border-[#8a8575]/50 bg-[#ccc7b2] px-3 py-1.5 font-mono text-[11px] text-[#5a5545] transition-colors hover:border-[#c8a84b]/50 hover:text-[#c8a84b]"
+            className="border border-[#8a8575]/50 bg-[#ccc7b2] px-3 py-1.5 font-mono text-[11px] text-[#5a5545] transition-colors hover:border-[#5a5545] hover:text-[#1c1a14]"
           >
             {s}
           </button>
