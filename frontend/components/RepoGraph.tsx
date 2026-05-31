@@ -10,26 +10,26 @@ interface RepoGraphProps {
 }
 
 const EXT_COLORS: Record<string, string> = {
-  ".ts": "#818cf8",
-  ".tsx": "#a78bfa",
-  ".js": "#fbbf24",
-  ".jsx": "#f59e0b",
-  ".py": "#34d399",
-  ".md": "#6ee7b7",
-  ".json": "#fb923c",
-  ".yaml": "#fdba74",
-  ".yml":  "#fdba74",
-  ".toml": "#fdba74",
-  ".css": "#f472b6",
-  ".scss": "#ec4899",
-  ".html": "#60a5fa",
-  ".go": "#22d3ee",
-  ".rs": "#f87171",
-  ".sh": "#a3e635",
-  ".rb": "#f87171",
+  ".ts":   "#c8a84b",
+  ".tsx":  "#e8c86a",
+  ".js":   "#b89030",
+  ".jsx":  "#a07820",
+  ".py":   "#6ab88a",
+  ".md":   "#8abaa0",
+  ".json": "#c8906a",
+  ".yaml": "#b07858",
+  ".yml":  "#b07858",
+  ".toml": "#b07858",
+  ".css":  "#c870a0",
+  ".scss": "#b05888",
+  ".html": "#7090c8",
+  ".go":   "#60a8b8",
+  ".rs":   "#c87070",
+  ".sh":   "#90b850",
+  ".rb":   "#c87070",
 };
-const FILE_DEFAULT = "#94a3b8";
-const DIR_COLOR = "#7c3aed";
+const FILE_DEFAULT = "#7a7560";
+const DIR_COLOR    = "#c8a84b";
 
 function nodeColor(node: GraphNode): string {
   if (node.type === "directory") return DIR_COLOR;
@@ -233,7 +233,7 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
       .selectAll<SVGLineElement, SimLink>("line")
       .data(links)
       .join("line")
-      .attr("stroke", "#334155")
+      .attr("stroke", "#2e2b1e")
       .attr("stroke-width", 1);
 
     const drag = d3
@@ -261,7 +261,7 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
       .attr("r", nodeRadius)
       .attr("fill", nodeColor)
       .attr("fill-opacity", (d) => (d.type === "directory" ? 0.9 : 0.75))
-      .attr("stroke", (d) => (d.type === "directory" ? "#a78bfa" : "none"))
+      .attr("stroke", (d) => (d.type === "directory" ? "#c8a84b" : "none"))
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer")
       .call(drag);
@@ -273,7 +273,7 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
       .join("text")
       .text((d) => d.label)
       .attr("font-size", (d) => (d.id === "root" ? 11 : 9))
-      .attr("fill", "#c4b5fd")
+      .attr("fill", "#e8e4d0")
       .attr("text-anchor", "middle")
       .attr("dy", (d) => -nodeRadius(d) - 3)
       .style("pointer-events", "none")
@@ -288,12 +288,12 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
       .append("div")
       .attr("class", "d3-tooltip")
       .style("position", "fixed")
-      .style("background", "#1e1b4b")
-      .style("border", "1px solid #4c1d95")
-      .style("color", "#e2e8f0")
+      .style("background", "#111108")
+      .style("border", "1px solid #4a4535")
+      .style("color", "#e8e4d0")
       .style("padding", "6px 10px")
-      .style("border-radius", "6px")
-      .style("font-size", "12px")
+      .style("border-radius", "0")
+      .style("font-size", "11px")
       .style("font-family", "monospace")
       .style("pointer-events", "none")
       .style("opacity", "0")
@@ -351,42 +351,39 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
       {status === "loading" && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" className="animate-spin">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a84b" strokeWidth="2" strokeLinecap="round" className="animate-spin">
               <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
-            <p className="text-sm text-slate-500">Building graph...</p>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[#7a7560]">Building graph...</p>
           </div>
         </div>
       )}
 
       {status === "empty" && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-sm text-slate-500">No file data found for this repository.</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[#7a7560]">No file data found.</p>
         </div>
       )}
 
       {status === "error" && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-sm text-red-400">Failed to load graph.</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-[#c84848]">Failed to load graph.</p>
         </div>
       )}
 
       {status === "ready" && (
         <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/90 px-3 py-1.5 backdrop-blur-sm">
+          <div className="flex items-center gap-2 border border-[#2e2b1e] bg-[#0a0a08]/95 px-3 py-1.5 backdrop-blur-sm">
             <SearchIcon />
             <input
               type="text"
-              placeholder="Search files..."
+              placeholder="SEARCH FILES..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-48 bg-transparent font-mono text-xs text-slate-200 placeholder-slate-600 outline-none"
+              className="w-48 bg-transparent font-mono text-[11px] uppercase tracking-wider text-[#e8e4d0] placeholder-[#4a4535] outline-none"
             />
             {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="text-slate-500 hover:text-slate-300"
-              >
+              <button onClick={() => setSearch("")} className="text-[#4a4535] hover:text-[#c8a84b]">
                 <ClearIcon />
               </button>
             )}
@@ -399,7 +396,7 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
           <button
             onClick={resetZoom}
             title="Reset zoom"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-900/90 px-2.5 py-1.5 text-xs text-slate-400 backdrop-blur-sm transition-colors hover:text-slate-200"
+            className="flex items-center gap-1.5 border border-[#2e2b1e] bg-[#0a0a08]/95 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-[#7a7560] backdrop-blur-sm transition-colors hover:border-[#c8a84b]/40 hover:text-[#c8a84b]"
           >
             <ResetIcon />
             Reset zoom
@@ -411,12 +408,12 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
 
       {status === "ready" && (
         <div className="absolute bottom-4 left-4 flex flex-col gap-2">
-          <div className="rounded-lg border border-slate-800 bg-slate-900/90 p-3 backdrop-blur-sm">
-            <p className="mb-2 text-xs font-medium text-slate-400">
-              {nodeCount} nodes · scroll to zoom · drag to pan · click to focus
+          <div className="border border-[#2e2b1e] bg-[#0a0a08]/95 p-3 backdrop-blur-sm">
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#4a4535]">
+              {nodeCount} nodes · scroll · drag · click to focus
             </p>
             <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-              <LegendItem color={DIR_COLOR} label="directory" circle />
+              <LegendItem color={DIR_COLOR} label="directory" />
               {Object.entries(EXT_COLORS).slice(0, 8).map(([ext, color]) => (
                 <LegendItem key={ext} color={color} label={ext} />
               ))}
@@ -429,27 +426,18 @@ export function RepoGraph({ repoId }: RepoGraphProps) {
   );
 }
 
-function LegendItem({ color, label, circle }: { color: string; label: string; circle?: boolean }) {
+function LegendItem({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <div
-        className="shrink-0"
-        style={{
-          width: circle ? 10 : 8,
-          height: circle ? 10 : 8,
-          borderRadius: circle ? "50%" : 2,
-          background: color,
-          border: circle ? `1.5px solid #a78bfa` : "none",
-        }}
-      />
-      <span className="font-mono text-xs text-slate-500">{label}</span>
+      <div className="shrink-0" style={{ width: 8, height: 8, background: color }} />
+      <span className="font-mono text-[10px] text-[#7a7560]">{label}</span>
     </div>
   );
 }
 
 function SearchIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4a4535" strokeWidth="2" strokeLinecap="round">
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>

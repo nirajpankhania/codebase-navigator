@@ -3,525 +3,1007 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Codebase Navigator — Design Preview</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Codebase Navigator — NieR Preview</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
-          },
-          keyframes: {
-            thinking: {
-              '0%, 80%, 100%': { opacity: '0.2', transform: 'translateY(0)' },
-              '40%': { opacity: '1', transform: 'translateY(-4px)' },
-            },
-          },
-          animation: {
-            'thinking-1': 'thinking 1.4s ease-in-out infinite 0s',
-            'thinking-2': 'thinking 1.4s ease-in-out infinite 0.2s',
-            'thinking-3': 'thinking 1.4s ease-in-out infinite 0.4s',
-          },
-        },
-      },
-    }
-  </script>
   <style>
-    * { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
-    *::-webkit-scrollbar { width: 6px; }
-    *::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-    ::selection { background: rgba(139, 92, 246, 0.3); }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #d8d3be;
+      --bg2:    #ccc7b2;
+      --bg3:    #c0bba6;
+      --bg4:    #b4af9a;
+      --text:   #1c1a14;
+      --muted:  #5a5545;
+      --dim:    #8a8575;
+      --border: #8a8575;
+      --sel:    #26211a;
+      --stext:  #d8d3be;
+      --amber:  #c8a84b;
+      --tab:    #bcb8a4;
+      --red:    #c84848;
+      --cbg:    #0a0a08;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+
+    /* ── NieR outer screen frame ──────────────────────────────────── */
+    /* Mimics the thin decorative border seen around NieR's menu screens */
+    #nier-frame {
+      pointer-events: none;
+      position: fixed;
+      inset: 6px;
+      z-index: 9998;
+      border: 1px solid rgba(138,133,117,0.45);
+    }
+    /* Corner diamond ticks at each corner of the frame */
+    #nier-frame::before, #nier-frame::after,
+    .frame-bl, .frame-br {
+      content: "";
+      position: absolute;
+      width: 20px; height: 20px;
+    }
+    #nier-frame::before { top:-1px; left:-1px; border-top:2px solid var(--border); border-left:2px solid var(--border); }
+    #nier-frame::after  { top:-1px; right:-1px; border-top:2px solid var(--border); border-right:2px solid var(--border); }
+    .frame-bl { bottom:-1px; left:-1px;  border-bottom:2px solid var(--border); border-left:2px solid var(--border); }
+    .frame-br { bottom:-1px; right:-1px; border-bottom:2px solid var(--border); border-right:2px solid var(--border); }
+    /* Inner accent lines */
+    .frame-line-t { position:absolute; top:4px;  left:24px; right:24px; height:1px; background:rgba(138,133,117,0.2); }
+    .frame-line-b { position:absolute; bottom:4px; left:24px; right:24px; height:1px; background:rgba(138,133,117,0.2); }
+    .frame-line-l { position:absolute; left:4px;   top:24px; bottom:24px; width:1px; background:rgba(138,133,117,0.2); }
+    .frame-line-r { position:absolute; right:4px;  top:24px; bottom:24px; width:1px; background:rgba(138,133,117,0.2); }
+    /* Mid-edge tick marks */
+    .frame-tick { position:absolute; background:var(--border); opacity:.5; }
+    .frame-tick.t { top:-1px; left:50%; transform:translateX(-50%); width:1px; height:8px; }
+    .frame-tick.b { bottom:-1px; left:50%; transform:translateX(-50%); width:1px; height:8px; }
+    .frame-tick.l { left:-1px; top:50%; transform:translateY(-50%); height:1px; width:8px; }
+    .frame-tick.r { right:-1px; top:50%; transform:translateY(-50%); height:1px; width:8px; }
+
+    /* Scanlines */
+    body::after {
+      content: "";
+      pointer-events: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,.018) 2px, rgba(0,0,0,.018) 3px);
+    }
+
+    * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    *::-webkit-scrollbar { width: 4px; }
+    *::-webkit-scrollbar-thumb { background: var(--border); }
+    ::selection { background: rgba(200,168,75,.35); color: var(--text); }
+
+    /* ── Keyframes ──────────────────────────────────────────────────── */
+    @keyframes glitch { 0%,87%,100%{clip-path:none;transform:none;opacity:1} 88%{clip-path:inset(14% 0 72% 0);transform:translate(-4px,0);opacity:.9} 90%{clip-path:inset(50% 0 28% 0);transform:translate(4px,0);opacity:.9} 92%{clip-path:inset(76% 0 6% 0);transform:translate(-2px,0);opacity:.95} 94%{clip-path:none;transform:none} 95%{clip-path:inset(30% 0 48% 0);transform:translate(3px,0);opacity:.85} 97%{clip-path:none;opacity:1} }
+    @keyframes nier-pulse  { 0%,100%{opacity:1} 50%{opacity:.2} }
+    @keyframes cur-blink   { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    @keyframes think-bar   { 0%,100%{transform:scaleY(.2);opacity:.3} 50%{transform:scaleY(1);opacity:1} }
+    @keyframes tgt-rot     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes tgt-cw      { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+    @keyframes h-sweep     { from{transform:translateX(-120px)} to{transform:translateX(100vw)} }
+    @keyframes flicker     { 0%,100%{opacity:1} 93%{opacity:1} 94%{opacity:.5} 96%{opacity:.9} 97%{opacity:1} }
+    @keyframes score-flash { 0%{opacity:1;transform:scale(1)} 50%{opacity:1;transform:scale(1.15)} 100%{opacity:0;transform:scale(1.3) translateY(-20px)} }
+    @keyframes recal-in    { from{opacity:0;transform:translate(-50%,-50%) scale(.8)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+
+    .glitch  { animation: glitch 6s infinite; }
+    .pulse-a { animation: nier-pulse 2.4s ease-in-out infinite; }
+    .flicker { animation: flicker 9s infinite; }
+    .think-b { display:inline-block; width:3px; height:16px; background:var(--text); transform-origin:bottom; }
+    .think-b:nth-child(1) { animation: think-bar 1s ease-in-out infinite 0s; }
+    .think-b:nth-child(2) { animation: think-bar 1s ease-in-out infinite .18s; }
+    .think-b:nth-child(3) { animation: think-bar 1s ease-in-out infinite .36s; }
+
+    /* ── Preview switcher ──────────────────────────────────────────── */
+    #switcher {
+      position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+      z-index: 10000;
+      display: flex; gap: 1px; padding: 3px;
+      border: 1px solid var(--border);
+      background: var(--tab);
+    }
+    #switcher button {
+      padding: 5px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+      border: none; background: transparent; color: var(--muted); cursor: pointer;
+      transition: all .15s;
+    }
+    #switcher button.active { background: var(--sel); color: var(--stext); }
+    #switcher button:not(.active):hover { color: var(--text); background: rgba(0,0,0,.06); }
+
+    /* ── Pages ─────────────────────────────────────────────────────── */
+    .page { display: none; }
+    .page.visible { display: block; }
+    #page-chat.visible { display: flex; }
+
+    /* ── NieR corner brackets ──────────────────────────────────────── */
+    .nc { position: relative; }
+    .nc-tl,.nc-tr,.nc-bl,.nc-br { position:absolute; width:8px; height:8px; pointer-events:none; }
+    .nc-tl { top:-1px; left:-1px;  border-top:1px solid; border-left:1px solid; }
+    .nc-tr { top:-1px; right:-1px; border-top:1px solid; border-right:1px solid; }
+    .nc-bl { bottom:-1px; left:-1px;  border-bottom:1px solid; border-left:1px solid; }
+    .nc-br { bottom:-1px; right:-1px; border-bottom:1px solid; border-right:1px solid; }
+
+    /* ── Square indicator ──────────────────────────────────────────── */
+    .sq { display:inline-block; width:7px; height:7px; flex-shrink:0; }
+    .sq-fill   { background: var(--text); }
+    .sq-amber  { background: var(--amber); }
+    .sq-outline{ border: 1px solid var(--border); }
+    .sq-sel    { background: var(--stext); }
+
+    /* ══════════════════════════════════════════════════════════════
+       LANDING
+    ══════════════════════════════════════════════════════════════ */
+    #page-landing {
+      min-height: 100vh; overflow: hidden; position: relative;
+      background-color: var(--bg);
+      background-image: linear-gradient(45deg,rgba(0,0,0,.022) 1px,transparent 1px),
+                        linear-gradient(-45deg,rgba(0,0,0,.022) 1px,transparent 1px);
+      background-size: 24px 24px;
+    }
+    .h-sweep {
+      pointer-events:none; position:absolute; top:0; left:0;
+      width:120px; height:100%;
+      background: linear-gradient(to right, transparent, rgba(100,96,86,.04), transparent);
+      z-index:1; animation: h-sweep 10s linear infinite;
+    }
+    #p-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+    .bg-rt { pointer-events:none; position:absolute; z-index:0; }
+
+    .l-hero {
+      position:relative; z-index:2;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      min-height:100vh; padding:88px 16px 64px; text-align:center;
+    }
+    .l-badge {
+      position:relative;
+      display:inline-flex; align-items:center; gap:10px;
+      margin-bottom:32px;
+      border:1px solid var(--border); background:var(--bg3);
+      padding:6px 20px;
+      font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+      color:var(--muted);
+    }
+    .l-title-sys { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.42em; text-transform:uppercase; color:var(--dim); margin-bottom:4px; }
+    .l-title-main { font-family:'IBM Plex Sans',sans-serif; font-size:clamp(52px,9vw,88px); font-weight:700; letter-spacing:-.02em; line-height:1; color:var(--text); }
+    .l-subtitle { max-width:400px; font-family:'JetBrains Mono',monospace; font-size:11px; line-height:2; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:40px; }
+    .l-form { width:100%; max-width:480px; }
+    .l-input-wrap { position:relative; margin-bottom:6px; }
+    .l-input-icon { pointer-events:none; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--dim); }
+    .l-input { width:100%; border:1px solid var(--border); border-left:3px solid var(--text); background:var(--bg3); padding:13px 14px 13px 40px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text); outline:none; transition:border-color .2s,background .2s; }
+    .l-input::placeholder { color:var(--dim); text-transform:uppercase; letter-spacing:.05em; }
+    .l-input:focus { border-color:var(--text); background:var(--bg2); }
+    .l-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; border:none; background:var(--sel); padding:13px; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--stext); cursor:pointer; transition:background .2s; }
+    .l-btn:hover { background:#38322a; }
+    .l-btn .arrow { color:var(--stext); }
+    .l-note { margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); text-align:center; }
+
+    .how { position:relative; z-index:2; border-top:1px solid var(--border); background-color:var(--bg3); background-image:linear-gradient(45deg,rgba(0,0,0,.02) 1px,transparent 1px),linear-gradient(-45deg,rgba(0,0,0,.02) 1px,transparent 1px); background-size:24px 24px; padding:72px 16px; }
+    .how-hdr { text-align:center; margin-bottom:48px; }
+    .how-label { font-family:'JetBrains Mono',monospace; display:flex; align-items:center; justify-content:center; gap:10px; font-size:9px; letter-spacing:.32em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+    .how-label span { height:1px; width:36px; background:var(--border); opacity:.7; }
+    .how-title { font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); }
+    .cards { max-width:820px; margin:0 auto; }
+    .card-li { display:flex; align-items:stretch; border:1px solid var(--border); margin-bottom:6px; background:var(--bg2); transition:background .15s; cursor:default; }
+    .card-li:hover { background:var(--bg3); }
+    .card-li.selected { background:var(--sel); border-color:var(--sel); }
+    .card-step-col { display:flex; flex-direction:column; align-items:center; justify-content:center; width:64px; flex-shrink:0; border-right:1px solid var(--border); padding:18px 0; gap:6px; }
+    .card-li.selected .card-step-col { border-right-color:rgba(255,255,255,.1); }
+    .card-step-num { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:var(--muted); line-height:1; }
+    .card-body-col { flex:1; padding:16px 20px; }
+    .card-ctitle { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--text); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+    .card-li.selected .card-ctitle { color:var(--stext); }
+    .card-cdesc { font-size:12px; line-height:1.7; color:var(--muted); }
+    .card-li.selected .card-cdesc { color:rgba(216,211,190,.65); }
+    .icode { font-family:'JetBrains Mono',monospace; border:1px solid var(--border); background:var(--bg4); padding:1px 5px; font-size:10px; color:var(--text); }
+    .card-li.selected .icode { border-color:rgba(255,255,255,.15); background:rgba(0,0,0,.2); color:var(--stext); }
+    .card-icon-col { display:flex; align-items:center; justify-content:center; width:56px; flex-shrink:0; border-left:1px solid var(--border); color:var(--dim); }
+    .card-li.selected .card-icon-col { border-left-color:rgba(255,255,255,.1); color:var(--stext); }
+    .geo-bar { display:flex; align-items:center; gap:8px; margin-bottom:24px; max-width:820px; margin-left:auto; margin-right:auto; }
+    .geo-bar-line { flex:1; height:1px; background:var(--border); }
+    .geo-bar-sq { width:7px; height:7px; background:var(--border); transform:rotate(45deg); }
+
+    /* ══════════════════════════════════════════════════════════════
+       CHAT
+    ══════════════════════════════════════════════════════════════ */
+    #page-chat { flex-direction:column; height:100vh; background-color:var(--bg); background-image:linear-gradient(45deg,rgba(0,0,0,.02) 1px,transparent 1px),linear-gradient(-45deg,rgba(0,0,0,.02) 1px,transparent 1px); background-size:24px 24px; }
+    .c-header { display:flex; align-items:center; gap:0; flex-shrink:0; background:var(--sel); border-bottom:1px solid rgba(255,255,255,.08); }
+    .c-tabs { display:flex; flex:1; }
+    .c-tab { display:flex; align-items:center; gap:7px; padding:10px 18px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:rgba(216,211,190,.45); cursor:pointer; border:none; background:none; border-right:1px solid rgba(255,255,255,.06); transition:color .15s,background .15s; }
+    .c-tab:hover { color:rgba(216,211,190,.7); background:rgba(255,255,255,.04); }
+    .c-tab.active { color:var(--stext); background:rgba(200,168,75,.12); border-bottom:2px solid var(--amber); }
+    .c-header-right { display:flex; align-items:center; gap:10px; padding:0 18px; border-left:1px solid rgba(255,255,255,.06); }
+    .c-repo-dot { width:5px; height:5px; background:var(--amber); transform:rotate(45deg); animation:nier-pulse 2s ease-in-out infinite; }
+    .c-repo-name { font-family:'JetBrains Mono',monospace; font-size:10px; color:rgba(216,211,190,.5); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .c-back { display:flex; align-items:center; justify-content:center; width:44px; height:100%; border-right:1px solid rgba(255,255,255,.06); background:none; border-top:none; border-bottom:none; border-left:none; color:rgba(216,211,190,.4); cursor:pointer; transition:color .15s,background .15s; }
+    .c-back:hover { color:var(--amber); background:rgba(255,255,255,.04); }
+    .c-panels { flex:1; min-height:0; display:flex; flex-direction:column; }
+    #cp-chat { flex:1; display:flex; flex-direction:column; min-height:0; }
+    #cp-graph { display:none; flex:1; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
+    .messages { flex:1; overflow-y:auto; padding:20px 16px; }
+    .msgs-inner { max-width:660px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+    .c-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:72px 16px; text-align:center; gap:12px; }
+    .c-empty-icon { opacity:.45; margin-bottom:8px; }
+    .c-empty-title { font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--text); }
+    .c-empty-sub { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+    .msg-u { display:flex; justify-content:flex-end; }
+    .msg-u-bubble { max-width:68%; background:var(--sel); color:var(--stext); padding:10px 14px; font-size:13px; line-height:1.6; border-left:3px solid var(--amber); display:flex; align-items:flex-start; gap:8px; }
+    .msg-b { display:flex; align-items:flex-start; gap:8px; }
+    .b-avatar { flex-shrink:0; width:26px; height:26px; border:1px solid var(--border); background:var(--bg3); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:.06em; color:var(--amber); margin-top:2px; }
+    .msg-b-bubble { position:relative; flex:1; max-width:calc(100% - 34px); border:1px solid var(--border); border-left:3px solid var(--border); background:var(--bg2); padding:10px 14px; font-size:13px; line-height:1.7; color:var(--text); }
+    .msg-b-bubble code { font-family:'JetBrains Mono',monospace; border:1px solid var(--border); background:var(--bg4); padding:1px 5px; font-size:10px; }
+    .tw-cursor { display:inline-block; width:8px; height:14px; background:var(--text); vertical-align:middle; margin-left:2px; animation:cur-blink .75s step-end infinite; }
+    .think-wrap { display:flex; align-items:center; gap:10px; padding:2px 0; }
+    .think-bars { display:flex; align-items:flex-end; gap:3px; height:16px; }
+    .think-lbl { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+    .demo-strip { flex-shrink:0; display:flex; justify-content:center; align-items:center; gap:5px; padding:5px; border-top:1px solid var(--border); background:var(--bg3); }
+    .ds-lbl { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+    .ds-btn { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; background:none; border:1px solid var(--border); color:var(--muted); padding:3px 10px; cursor:pointer; transition:all .15s; }
+    .ds-btn:hover { border-color:var(--text); color:var(--text); }
+    .ds-btn.active { background:var(--sel); border-color:var(--sel); color:var(--stext); }
+    .c-input-bar { flex-shrink:0; border-top:1px solid var(--border); background:var(--bg3); padding:12px 16px; }
+    .c-input-row { max-width:660px; margin:0 auto; display:flex; gap:6px; }
+    .c-input { flex:1; border:1px solid var(--border); border-left:3px solid var(--border); background:var(--bg2); padding:10px 14px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text); outline:none; transition:border-color .2s,background .2s; }
+    .c-input::placeholder { color:var(--dim); text-transform:uppercase; letter-spacing:.05em; }
+    .c-input:focus { border-color:var(--amber); border-left-color:var(--amber); background:var(--bg); }
+    .c-send { display:flex; align-items:center; gap:6px; border:1px solid var(--sel); background:var(--sel); padding:10px 16px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--stext); cursor:pointer; transition:background .2s; }
+    .c-send:hover { background:#38322a; }
+    .c-send .arr { color:var(--amber); }
+
+    /* ══════════════════════════════════════════════════════════════
+       INGESTION BULLET HELL
+    ══════════════════════════════════════════════════════════════ */
+    #page-ingest {
+      position:relative; height:100vh;
+      background:#cac6b6; overflow:hidden; cursor:none;
+    }
+    #bh-canvas { position:absolute; inset:0; width:100%; height:100%; }
+
+    /* HUD panels (keep NieR parchment style on dark bg) */
+    .bh-panel {
+      position:absolute;
+      border:1px solid rgba(200,168,75,.3);
+      background:rgba(20,18,14,.9);
+      backdrop-filter:blur(6px);
+      padding:10px 14px;
+    }
+    .bh-sys { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(200,168,75,.4); margin-bottom:3px; }
+    .bh-val { font-family:'JetBrains Mono',monospace; font-size:20px; letter-spacing:.1em; color:#c8a84b; line-height:1; }
+    .bh-sub { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:rgba(200,168,75,.35); margin-top:3px; }
+
+    /* Lives */
+    .bh-tl { top:20px; left:20px; }
+    .bh-tr { top:20px; right:20px; text-align:right; }
+    .lives-row { display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+    .life-icon { font-size:16px; color:#c8a84b; transition:color .3s; }
+    .life-icon.lost { color:rgba(200,168,75,.2); }
+
+    /* Recalibrating overlay */
+    #recal {
+      pointer-events:none;
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      z-index:20; display:none;
+      font-family:'JetBrains Mono',monospace;
+      font-size:22px; letter-spacing:.22em; text-transform:uppercase;
+      color:#c84848;
+      animation: recal-in .3s ease-out;
+    }
+    /* Score popup */
+    #score-popup {
+      pointer-events:none;
+      position:absolute; top:40%; left:50%; transform:translateX(-50%);
+      z-index:20; display:none;
+      font-family:'JetBrains Mono',monospace;
+      font-size:14px; letter-spacing:.18em; text-transform:uppercase;
+      color:#1c1a14;
+    }
+
+    /* Phase HUD at bottom */
+    .bh-bottom { position:absolute; bottom:0; left:0; right:0; z-index:10; padding:16px 24px; }
+    .bh-phases-wrap {
+      position:relative;
+      max-width:660px; margin:0 auto;
+      border:1px solid rgba(200,168,75,.28);
+      background:rgba(20,18,14,.88);
+      padding:14px 20px;
+      backdrop-filter:blur(10px);
+    }
+    .bh-phase-title { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:rgba(200,168,75,.5); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+    .bh-advance { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; background:none; border:1px solid rgba(200,168,75,.3); color:rgba(200,168,75,.6); padding:2px 10px; cursor:pointer; transition:all .15s; }
+    .bh-advance:hover { border-color:#c8a84b; color:#c8a84b; }
+    .phases { display:flex; gap:5px; }
+    .phase-box { flex:1; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:1px solid rgba(46,43,30,.8); background:transparent; transition:border-color .3s,background .3s; }
+    .phase-box.done { border-color:rgba(200,168,75,.5); background:rgba(200,168,75,.07); }
+    .phase-box.active { border-color:rgba(200,168,75,.9); background:rgba(200,168,75,.04); animation:flicker 3s infinite; }
+    .phase-num { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; color:rgba(74,69,53,.8); }
+    .phase-box.done .phase-num,.phase-box.active .phase-num { color:#c8a84b; }
+    .phase-lbl { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:.06em; text-transform:uppercase; color:rgba(74,69,53,.8); }
+    .phase-box.done .phase-lbl,.phase-box.active .phase-lbl { color:rgba(200,168,75,.7); }
+
+    #bh-flash { pointer-events:none; position:absolute; inset:0; z-index:5; opacity:0; }
   </style>
 </head>
-<body class="font-sans bg-slate-950 text-slate-50 antialiased">
+<body>
 
-  <!-- ─── Preview switcher ──────────────────────────────────────────────── -->
-  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900/95 p-1 shadow-2xl backdrop-blur-sm">
-    <button onclick="showPage('landing')" id="btn-landing"
-      class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 bg-slate-700 text-slate-100 cursor-pointer">
-      Landing Page
-    </button>
-    <button onclick="showPage('chat')" id="btn-chat"
-      class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
-      Chat Page
-    </button>
-  </div>
+<!-- NieR outer screen frame -->
+<div id="nier-frame">
+  <div class="frame-bl"></div>
+  <div class="frame-br"></div>
+  <div class="frame-line-t"></div>
+  <div class="frame-line-b"></div>
+  <div class="frame-line-l"></div>
+  <div class="frame-line-r"></div>
+  <div class="frame-tick t"></div>
+  <div class="frame-tick b"></div>
+  <div class="frame-tick l"></div>
+  <div class="frame-tick r"></div>
+</div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       LANDING PAGE
-  ═══════════════════════════════════════════════════════════════════════ -->
-  <div id="page-landing" class="relative bg-slate-950 text-slate-50 overflow-hidden">
+<!-- Preview switcher -->
+<div id="switcher">
+  <button class="active" onclick="showPage('landing')">Landing</button>
+  <button onclick="showPage('chat')">Chat</button>
+  <button onclick="showPage('ingest')">Ingestion</button>
+</div>
 
-    <!-- Animated particle canvas (landing only) -->
-    <canvas id="bg-canvas" class="absolute inset-0 w-full h-full pointer-events-none" style="z-index:0;"></canvas>
+<!-- ══════════════════════════════════════════════════════════════════════
+     LANDING
+══════════════════════════════════════════════════════════════════════ -->
+<div id="page-landing" class="page visible">
+  <div class="h-sweep"></div>
+  <canvas id="p-canvas"></canvas>
 
-    <!-- Ambient glow blobs -->
-    <div class="pointer-events-none absolute inset-0 overflow-hidden" style="z-index:1;">
-      <div class="absolute -top-32 -right-20 w-[600px] h-[600px] rounded-full bg-violet-600/8 blur-[130px]"></div>
-      <div class="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-violet-900/10 blur-[100px]"></div>
+  <!-- Background targeting reticles -->
+  <svg class="bg-rt" style="right:-60px;top:50%;transform:translateY(-50%);width:480px;height:480px;opacity:.5;" viewBox="0 0 480 480" fill="none">
+    <circle cx="240" cy="240" r="220" stroke="#8a8575" stroke-width=".6" opacity=".12"/>
+    <g style="transform-origin:240px 240px;animation:tgt-rot 32s linear infinite"><circle cx="240" cy="240" r="185" stroke="#8a8575" stroke-width=".5" stroke-dasharray="7 16" opacity=".14"/></g>
+    <g style="transform-origin:240px 240px;animation:tgt-cw 22s linear infinite"><circle cx="240" cy="240" r="145" stroke="#8a8575" stroke-width=".5" stroke-dasharray="4 22" opacity=".12"/></g>
+    <circle cx="240" cy="240" r="100" stroke="#8a8575" stroke-width=".5" opacity=".1"/>
+    <circle cx="240" cy="240" r="55" stroke="#8a8575" stroke-width=".5" opacity=".14"/>
+    <line x1="240" y1="40" x2="240" y2="175" stroke="#8a8575" stroke-width=".4" opacity=".1"/>
+    <line x1="240" y1="305" x2="240" y2="440" stroke="#8a8575" stroke-width=".4" opacity=".1"/>
+    <line x1="40" y1="240" x2="175" y2="240" stroke="#8a8575" stroke-width=".4" opacity=".1"/>
+    <line x1="305" y1="240" x2="440" y2="240" stroke="#8a8575" stroke-width=".4" opacity=".1"/>
+    <g stroke="#8a8575" stroke-width="1" opacity=".18"><line x1="240" y1="20" x2="240" y2="32"/><line x1="240" y1="448" x2="240" y2="460"/><line x1="20" y1="240" x2="32" y2="240"/><line x1="448" y1="240" x2="460" y2="240"/></g>
+    <rect x="234" y="234" width="12" height="12" stroke="#8a8575" stroke-width=".8" opacity=".22" transform="rotate(45 240 240)" fill="none"/>
+    <rect x="237" y="237" width="6" height="6" fill="#8a8575" opacity=".18" transform="rotate(45 240 240)"/>
+  </svg>
+  <svg class="bg-rt" style="left:-40px;top:25%;width:220px;height:220px;opacity:.4;" viewBox="0 0 220 220" fill="none">
+    <g style="transform-origin:110px 110px;animation:tgt-rot 40s linear infinite"><circle cx="110" cy="110" r="95" stroke="#8a8575" stroke-width=".5" stroke-dasharray="5 18" opacity=".14"/></g>
+    <circle cx="110" cy="110" r="55" stroke="#8a8575" stroke-width=".4" opacity=".1"/>
+    <line x1="0" y1="110" x2="80" y2="110" stroke="#8a8575" stroke-width=".3" opacity=".08"/>
+    <line x1="140" y1="110" x2="220" y2="110" stroke="#8a8575" stroke-width=".3" opacity=".08"/>
+    <line x1="110" y1="0" x2="110" y2="80" stroke="#8a8575" stroke-width=".3" opacity=".08"/>
+    <line x1="110" y1="140" x2="110" y2="220" stroke="#8a8575" stroke-width=".3" opacity=".08"/>
+  </svg>
+
+  <section class="l-hero">
+    <div class="l-badge nc" id="l-badge">
+      <div class="sq sq-fill pulse-a"></div>
+      NEURAL SCAN INTERFACE
+      <div class="sq sq-fill pulse-a" style="animation-delay:.7s"></div>
     </div>
-
-    <!-- ── Hero ───────────────────────────────────────────────────────── -->
-    <section class="relative flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-16 text-center" style="z-index:2;">
-
-      <!-- Badge -->
-      <div class="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-500/25 bg-violet-500/8 px-4 py-1.5 text-sm font-medium text-violet-300">
-        <span class="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse"></span>
-        AI-Powered Codebase Chat
-      </div>
-
-      <!-- Headline -->
-      <h1 class="max-w-4xl text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-slate-50 leading-[1.1]">
-        Understand any
-        <span class="text-violet-400"> codebase</span>
-        <br/>instantly
-      </h1>
-
-      <!-- Sub -->
-      <p class="mt-6 max-w-lg text-lg leading-relaxed text-slate-400">
-        Paste a GitHub URL. We fetch, chunk, and embed the entire repo so you can
-        ask questions, trace logic, and explore code — in plain English.
-      </p>
-
-      <!-- URL Form -->
-      <div class="mt-10 w-full max-w-xl">
-        <div class="flex flex-col gap-3">
-          <div class="relative flex items-center">
-            <div class="pointer-events-none absolute left-3.5 text-slate-500">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
-              </svg>
-            </div>
-            <input type="url" placeholder="https://github.com/owner/repo"
-              class="w-full rounded-xl border border-slate-700 bg-slate-900/80 py-3.5 pl-11 pr-4 text-slate-100 placeholder-slate-600 transition-colors duration-200 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 backdrop-blur-sm" />
-          </div>
-          <button class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 font-semibold text-white transition-all duration-200 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40">
-            Analyze Repository
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </button>
+    <div style="margin-bottom:28px;user-select:none;">
+      <div class="l-title-sys">SYSTEM // CODEBASE</div>
+      <div class="l-title-main">NAVIGATOR</div>
+    </div>
+    <p class="l-subtitle">PASTE A GITHUB URL. WE FETCH, CHUNK AND EMBED<br/>THE ENTIRE REPO — THEN YOU QUERY IT IN PLAIN LANGUAGE.</p>
+    <div class="l-form">
+      <div class="l-input-wrap">
+        <div class="l-input-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
         </div>
-        <p class="mt-4 text-xs text-slate-600">Works with any public GitHub repository</p>
+        <input class="l-input" type="url" placeholder="https://github.com/owner/repo" />
       </div>
+      <button class="l-btn"><span class="arrow">▶</span> INITIALIZE ANALYSIS</button>
+      <p class="l-note">PUBLIC GITHUB REPOSITORIES ONLY</p>
+    </div>
+  </section>
 
-      <!-- Scroll hint -->
-      <div class="absolute bottom-8 flex flex-col items-center gap-1 text-slate-700">
-        <span class="text-xs">scroll to see features</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 5v14M5 12l7 7 7-7"/>
-        </svg>
-      </div>
-    </section>
-
-    <!-- ── Feature cards ─────────────────────────────────────────────── -->
-    <section class="relative border-t border-slate-800 bg-slate-900/60 px-4 py-24" style="z-index:2;">
-      <div class="mx-auto max-w-5xl">
-        <div class="mb-12 text-center">
-          <h2 class="text-2xl font-semibold text-slate-100">How it works</h2>
-          <p class="mt-2 text-slate-500">Three steps from URL to conversation</p>
+  <section class="how">
+    <div class="how-hdr">
+      <div class="how-label"><span></span>PROTOCOL<span></span></div>
+      <div class="how-title">HOW IT WORKS</div>
+    </div>
+    <div class="geo-bar"><div class="geo-bar-line"></div><div class="geo-bar-sq"></div><div class="geo-bar-line"></div></div>
+    <div class="cards">
+      <div class="card-li nc" id="ci1">
+        <div class="card-step-col"><div class="sq sq-outline"></div><div class="card-step-num">01</div></div>
+        <div class="card-body-col">
+          <div class="card-ctitle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>SMART INGESTION</div>
+          <div class="card-cdesc">Fetches every source file from GitHub and splits it into meaningful overlapping chunks using tiktoken.</div>
         </div>
-        <div class="grid gap-4 sm:grid-cols-3">
-
-          <div class="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-200 hover:border-violet-500/30 hover:bg-slate-900 cursor-default">
-            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-violet-400 transition-colors duration-200 group-hover:bg-violet-500/10">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </div>
-            <div class="mb-2 text-xs font-mono font-medium text-violet-500/70 uppercase tracking-wider">Step 01</div>
-            <h3 class="mb-2 font-semibold text-slate-100">Smart Ingestion</h3>
-            <p class="text-sm leading-relaxed text-slate-400">Fetches every source file from GitHub and splits it into meaningful, overlapping chunks using tiktoken.</p>
-          </div>
-
-          <div class="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-200 hover:border-violet-500/30 hover:bg-slate-900 cursor-default">
-            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-violet-400 transition-colors duration-200 group-hover:bg-violet-500/10">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-              </svg>
-            </div>
-            <div class="mb-2 text-xs font-mono font-medium text-violet-500/70 uppercase tracking-wider">Step 02</div>
-            <h3 class="mb-2 font-semibold text-slate-100">Vector Embeddings</h3>
-            <p class="text-sm leading-relaxed text-slate-400">Embeds each chunk with <code class="font-mono text-xs bg-slate-800 px-1 rounded text-slate-300">text-embedding-3-small</code> and stores vectors in Supabase pgvector.</p>
-          </div>
-
-          <div class="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 transition-all duration-200 hover:border-violet-500/30 hover:bg-slate-900 cursor-default">
-            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-violet-400 transition-colors duration-200 group-hover:bg-violet-500/10">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-            <div class="mb-2 text-xs font-mono font-medium text-violet-500/70 uppercase tracking-wider">Step 03</div>
-            <h3 class="mb-2 font-semibold text-slate-100">RAG Chat</h3>
-            <p class="text-sm leading-relaxed text-slate-400">Retrieves the most relevant context at query time and answers with <code class="font-mono text-xs bg-slate-800 px-1 rounded text-slate-300">gpt-4o-mini</code>.</p>
-          </div>
-
-        </div>
+        <div class="card-icon-col"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
       </div>
-    </section>
-  </div>
+      <div class="card-li selected nc" id="ci2">
+        <div class="card-step-col"><div class="sq sq-sel"></div><div class="card-step-num">02</div></div>
+        <div class="card-body-col">
+          <div class="card-ctitle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>VECTOR EMBEDDINGS</div>
+          <div class="card-cdesc">Embeds each chunk with <span class="icode">text-embedding-3-small</span> and stores vectors in Supabase pgvector.</div>
+        </div>
+        <div class="card-icon-col"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
+      </div>
+      <div class="card-li nc" id="ci3">
+        <div class="card-step-col"><div class="sq sq-outline"></div><div class="card-step-num">03</div></div>
+        <div class="card-body-col">
+          <div class="card-ctitle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>RAG QUERY</div>
+          <div class="card-cdesc">Retrieves the most relevant context at query time and answers with <span class="icode">gpt-4o-mini</span>.</div>
+        </div>
+        <div class="card-icon-col"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      </div>
+    </div>
+  </section>
+</div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       CHAT PAGE
-  ═══════════════════════════════════════════════════════════════════════ -->
-  <div id="page-chat" class="flex-col bg-slate-950 text-slate-50" style="display:none; height:100vh;">
-
-    <!-- Header -->
-    <header class="flex shrink-0 items-center gap-4 border-b border-slate-800 bg-slate-950/80 px-5 py-3.5 backdrop-blur-sm">
-      <button class="flex cursor-pointer items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors duration-200 hover:bg-slate-800 hover:text-slate-200">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 12H5M12 5l-7 7 7 7"/>
-        </svg>
+<!-- ══════════════════════════════════════════════════════════════════════
+     CHAT
+══════════════════════════════════════════════════════════════════════ -->
+<div id="page-chat" class="page">
+  <header class="c-header">
+    <button class="c-back"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <nav class="c-tabs">
+      <button class="c-tab active" onclick="switchTab('chat')">
+        <div class="sq" style="width:6px;height:6px;background:#c8a84b;flex-shrink:0;"></div>QUERY INTERFACE
       </button>
-      <div class="h-5 w-px bg-slate-800"></div>
-      <div class="flex items-center gap-2">
-        <div class="flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10 text-violet-400">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="10" rx="2"/>
-            <circle cx="12" cy="5" r="2"/>
-            <path d="M12 7v4"/>
-          </svg>
-        </div>
-        <span class="font-medium text-slate-100">Codebase Navigator</span>
-      </div>
-      <div class="ml-auto flex items-center gap-2 rounded-md border border-slate-700/60 bg-slate-900 px-2.5 py-1">
-        <span class="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
-        <code class="font-mono text-xs text-slate-400">a3f7c891-4d2e-demo</code>
-      </div>
-    </header>
-
-    <!-- Message area -->
-    <div class="overflow-y-auto px-4 py-6 space-y-6" style="flex:1; min-height:0;">
-
-      <!-- Empty state -->
-      <div id="empty-state" class="flex flex-col items-center justify-center py-20 text-center">
-        <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-800 text-violet-400">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 18 22 12 16 6"/>
-            <polyline points="8 6 2 12 8 18"/>
-          </svg>
-        </div>
-        <h2 class="mb-2 text-lg font-semibold text-slate-200">Ready to explore</h2>
-        <p class="max-w-sm text-sm leading-relaxed text-slate-500">
-          Ask anything about this repository — architecture, functions,
-          dependencies, or how specific code works.
-        </p>
-        <div class="mt-6 flex flex-wrap justify-center gap-2">
-          <button onclick="prefill('What does this repo do?')" class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:text-slate-300">
-            What does this repo do?
-          </button>
-          <button onclick="prefill('What are the main entry points?')" class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:text-slate-300">
-            What are the main entry points?
-          </button>
-          <button onclick="prefill('How is auth handled?')" class="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-500 cursor-pointer transition-colors duration-150 hover:border-slate-700 hover:text-slate-300">
-            How is auth handled?
-          </button>
-        </div>
-      </div>
-
-      <!-- Sample conversation -->
-      <div id="sample-convo" class="space-y-6" style="display:none;">
-        <div class="flex justify-end">
-          <div class="max-w-prose rounded-2xl rounded-br-sm bg-slate-700 px-4 py-3 text-sm leading-relaxed text-slate-100">
-            What does this repository do?
-          </div>
-        </div>
-
-        <div class="flex justify-start">
-          <div class="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/>
-            </svg>
-          </div>
-          <div class="max-w-prose rounded-2xl rounded-bl-sm border border-slate-700/50 bg-slate-800/70 px-4 py-3 text-sm leading-relaxed text-slate-200">
-            This is a <strong class="font-semibold text-slate-100">Codebase Navigator</strong> — an AI-powered tool for chatting with any GitHub repository.<br/><br/>
-            The main flow: (1) you paste a GitHub URL, (2) the backend fetches all source files and chunks them, (3) embeds each chunk with
-            <code class="font-mono text-xs bg-slate-700/80 px-1.5 py-0.5 rounded text-violet-300">text-embedding-3-small</code>,
-            stores vectors in Supabase pgvector, then (4) answers questions by retrieving relevant context and passing it to
-            <code class="font-mono text-xs bg-slate-700/80 px-1.5 py-0.5 rounded text-violet-300">gpt-4o-mini</code>.
-          </div>
-        </div>
-
-        <div class="flex justify-end">
-          <div class="max-w-prose rounded-2xl rounded-br-sm bg-slate-700 px-4 py-3 text-sm leading-relaxed text-slate-100">
-            Where does the ingestion logic live in the backend?
-          </div>
-        </div>
-
-        <!-- Thinking dots -->
-        <div class="flex justify-start">
-          <div class="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/>
-            </svg>
-          </div>
-          <div class="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-slate-700/50 bg-slate-800/70 px-4 py-4">
-            <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-1"></span>
-            <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-2"></span>
-            <span class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-thinking-3"></span>
-          </div>
-        </div>
-      </div>
-
+      <button class="c-tab" onclick="switchTab('graph')">
+        <div class="sq sq-outline" style="border-color:rgba(216,211,190,.2);flex-shrink:0;"></div>STRUCTURE MAP
+      </button>
+    </nav>
+    <div class="c-header-right">
+      <div class="c-repo-dot"></div>
+      <code class="c-repo-name">owner/repository-name</code>
     </div>
-
-    <!-- Demo switcher (preview only) -->
-    <div class="flex justify-center gap-3 border-t border-slate-800/60 py-2" style="flex-shrink:0;">
-      <button onclick="showEmpty()" class="text-xs text-slate-700 hover:text-slate-500 px-2 py-1 cursor-pointer transition-colors">Empty state</button>
-      <span class="text-slate-800 text-xs self-center">·</span>
-      <button onclick="showConvo()" class="text-xs text-slate-700 hover:text-slate-500 px-2 py-1 cursor-pointer transition-colors">With conversation</button>
-    </div>
-
-    <!-- Input bar -->
-    <div class="border-t border-slate-800 bg-slate-950/80 p-4 backdrop-blur-sm" style="flex-shrink:0;">
-      <div class="mx-auto flex max-w-3xl items-center gap-3">
-        <input type="text" id="chat-input" placeholder="Ask a question about this codebase..."
-          class="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 placeholder-slate-600 transition-colors duration-200 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20" />
-        <button class="flex cursor-pointer items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition-all duration-200 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-          </svg>
-          <span>Send</span>
-        </button>
+  </header>
+  <div class="c-panels">
+    <div id="cp-chat">
+      <div class="messages">
+        <div class="msgs-inner" id="msgs-inner">
+          <div id="c-empty" class="c-empty">
+            <svg class="c-empty-icon" width="68" height="68" viewBox="0 0 68 68" fill="none">
+              <circle cx="34" cy="34" r="28" stroke="#8a8575" stroke-width=".8"/>
+              <g style="transform-origin:34px 34px;animation:tgt-rot 20s linear infinite"><circle cx="34" cy="34" r="18" stroke="#8a8575" stroke-width=".6" stroke-dasharray="3 8"/></g>
+              <circle cx="34" cy="34" r="6" stroke="#8a8575" stroke-width=".8"/>
+              <line x1="0" y1="34" x2="22" y2="34" stroke="#8a8575" stroke-width=".6"/>
+              <line x1="46" y1="34" x2="68" y2="34" stroke="#8a8575" stroke-width=".6"/>
+              <line x1="34" y1="0" x2="34" y2="22" stroke="#8a8575" stroke-width=".6"/>
+              <line x1="34" y1="46" x2="34" y2="68" stroke="#8a8575" stroke-width=".6"/>
+              <rect x="31" y="31" width="6" height="6" fill="#8a8575" opacity=".5" transform="rotate(45 34 34)"/>
+            </svg>
+            <div class="c-empty-title">NAVIGATOR — ONLINE</div>
+            <div class="c-empty-sub">AWAITING QUERY TRANSMISSION</div>
+          </div>
+          <div id="c-convo" style="display:none;flex-direction:column;gap:14px;">
+            <div class="msg-u">
+              <div class="msg-u-bubble"><div class="sq sq-sel" style="margin-top:4px;flex-shrink:0;"></div>What does this repository do?</div>
+            </div>
+            <div class="msg-b">
+              <div class="b-avatar">AI</div>
+              <div class="msg-b-bubble nc" id="tw-bub"><span id="tw-txt"></span><span class="tw-cursor" id="tw-cur"></span></div>
+            </div>
+            <div class="msg-u" id="msg2" style="display:none;">
+              <div class="msg-u-bubble"><div class="sq sq-sel" style="margin-top:4px;flex-shrink:0;"></div>Where does the ingestion logic live?</div>
+            </div>
+            <div class="msg-b" id="think-row" style="display:none;">
+              <div class="b-avatar">AI</div>
+              <div class="msg-b-bubble"><div class="think-wrap"><div class="think-bars"><div class="think-b"></div><div class="think-b"></div><div class="think-b"></div></div><span class="think-lbl">PROCESSING QUERY...</span></div></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="mt-2 text-center text-xs text-slate-700">Powered by GPT-4o-mini + text-embedding-3-small</p>
+      <div class="demo-strip">
+        <span class="ds-lbl">Demo:</span>
+        <button class="ds-btn active" id="db-empty"  onclick="chatDemo('empty')">Empty</button>
+        <button class="ds-btn"        id="db-tw"     onclick="chatDemo('typewriter')">Typewriter</button>
+        <button class="ds-btn"        id="db-think"  onclick="chatDemo('thinking')">Thinking</button>
+      </div>
+      <div class="c-input-bar">
+        <div class="c-input-row">
+          <input class="c-input" type="text" placeholder="Enter query..." />
+          <button class="c-send">SEND <span class="arr">▶</span></button>
+        </div>
+      </div>
+    </div>
+    <div id="cp-graph">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="opacity:.3;">
+        <circle cx="24" cy="24" r="18" stroke="#8a8575" stroke-width=".8"/>
+        <g style="transform-origin:24px 24px;animation:tgt-rot 12s linear infinite"><circle cx="24" cy="24" r="12" stroke="#8a8575" stroke-width=".6" stroke-dasharray="3 7"/></g>
+        <rect x="21" y="21" width="6" height="6" stroke="#8a8575" fill="none" transform="rotate(45 24 24)"/>
+      </svg>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);">D3 FORCE GRAPH — LIVE IN APP</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     INGESTION — BULLET HELL
+══════════════════════════════════════════════════════════════════════ -->
+<div id="page-ingest" class="page">
+  <canvas id="bh-canvas"></canvas>
+  <div id="bh-flash"></div>
+  <div id="recal">◆ RECALIBRATING ◆</div>
+  <div id="score-popup"></div>
+
+  <!-- TL: Score -->
+  <div class="bh-panel bh-tl nc" id="bh-tl">
+    <div class="bh-sys">SCAN SCORE</div>
+    <div class="bh-val" id="bh-score">0</div>
+    <div class="bh-sub">NODES: <span id="bh-kills">0</span> · TIME: <span id="bh-time">0s</span></div>
+  </div>
+
+  <!-- TR: Lives -->
+  <div class="bh-panel bh-tr nc" id="bh-tr">
+    <div class="bh-sys">INTEGRITY</div>
+    <div class="lives-row">
+      <span class="life-icon" id="life-1">◆</span>
+      <span class="life-icon" id="life-2">◆</span>
+      <span class="life-icon" id="life-3">◆</span>
     </div>
   </div>
 
-  <!-- ─── Scripts ───────────────────────────────────────────────────────── -->
-  <script>
-    /* ── Page switcher ─────────────────────────────────────────────── */
-    function showPage(page) {
-      const landing = document.getElementById('page-landing');
-      const chat    = document.getElementById('page-chat');
-      const btnL    = document.getElementById('btn-landing');
-      const btnC    = document.getElementById('btn-chat');
+  <!-- Bottom: Phase progress -->
+  <div class="bh-bottom">
+    <div class="bh-phases-wrap nc" id="bh-phases">
+      <div class="bh-phase-title">
+        <span>◆ NEURAL SCAN IN PROGRESS · MOVE TO DODGE · CLICK TO PULSE</span>
+        <button class="bh-advance" onclick="advancePhase()">ADVANCE ▶</button>
+      </div>
+      <div class="phases">
+        <div class="phase-box active" id="ph0"><div class="phase-num">01</div><div class="phase-lbl">FETCHING</div></div>
+        <div class="phase-box pending" id="ph1"><div class="phase-num">02</div><div class="phase-lbl">CHUNKING</div></div>
+        <div class="phase-box pending" id="ph2"><div class="phase-num">03</div><div class="phase-lbl">EMBEDDING</div></div>
+        <div class="phase-box pending" id="ph3"><div class="phase-num">04</div><div class="phase-lbl">INDEXING</div></div>
+        <div class="phase-box pending" id="ph4"><div class="phase-num">05</div><div class="phase-lbl">READY</div></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      if (page === 'landing') {
-        landing.style.display = '';
-        chat.style.display    = 'none';
-        btnL.classList.add('bg-slate-700', 'text-slate-100');
-        btnL.classList.remove('text-slate-400');
-        btnC.classList.remove('bg-slate-700', 'text-slate-100');
-        btnC.classList.add('text-slate-400');
-        startCanvas();
-      } else {
-        landing.style.display = 'none';
-        chat.style.display    = 'flex';
-        btnC.classList.add('bg-slate-700', 'text-slate-100');
-        btnC.classList.remove('text-slate-400');
-        btnL.classList.remove('bg-slate-700', 'text-slate-100');
-        btnL.classList.add('text-slate-400');
-        stopCanvas();
+<!-- ─── Scripts ──────────────────────────────────────────────────────────── -->
+<script>
+/* ══ Corner decorations ═══════════════════════════════════════════════════ */
+function nc(el, col) {
+  const c = col || 'rgba(138,133,117,0.55)';
+  ['tl','tr','bl','br'].forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'nc-' + p;
+    d.style.borderColor = c;
+    el.appendChild(d);
+  });
+}
+document.querySelectorAll('.nc').forEach(el => {
+  const onDark = el.closest('#page-ingest') || el.id === 'l-badge';
+  nc(el, onDark ? 'rgba(200,168,75,0.45)' : 'rgba(138,133,117,0.55)');
+});
+
+/* ══ Page switcher ════════════════════════════════════════════════════════ */
+let activePage = 'landing';
+let pRaf = null, bhRaf = null;
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => { p.classList.remove('visible'); p.style.removeProperty('display'); });
+  const el = document.getElementById('page-' + name);
+  el.classList.add('visible');
+  if (name === 'chat') el.style.display = 'flex';
+  document.querySelectorAll('#switcher button').forEach((b,i) =>
+    b.classList.toggle('active', ['landing','chat','ingest'][i] === name));
+  if (name === 'landing') { stopBH(); startParticles(); }
+  else if (name === 'ingest') { stopParticles(); startBH(); }
+  else { stopParticles(); stopBH(); }
+  activePage = name;
+}
+
+/* ══ Particle canvas ══════════════════════════════════════════════════════ */
+const A = '108,103,92';
+const PCC = { CONNECT:115, COUNT:50, SPEED:.25, MOUSE_R:150, MAX:180, BURST:6 };
+let pCvs, pCtx, pts=[], rips=[], pMx=-9999, pMy=-9999, pOn=false;
+
+function initP() { pCvs=document.getElementById('p-canvas'); pCtx=pCvs.getContext('2d'); }
+function resizeP() { pCvs.width=pCvs.parentElement.offsetWidth; pCvs.height=pCvs.parentElement.offsetHeight; }
+function makeP() {
+  pts=Array.from({length:PCC.COUNT},()=>({x:Math.random()*pCvs.width,y:Math.random()*pCvs.height,vx:(Math.random()-.5)*PCC.SPEED,vy:(Math.random()-.5)*PCC.SPEED,r:Math.random()*1.1+.4}));
+}
+function burstP(cx,cy) {
+  rips.push({x:cx,y:cy,r:0,a:.4});
+  const slots=Math.min(PCC.BURST,PCC.MAX-pts.length);
+  for(let i=0;i<slots;i++){const ang=(i/PCC.BURST)*Math.PI*2+Math.random()*.5,sp=PCC.SPEED*(1.5+Math.random()*1.8);pts.push({x:cx,y:cy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,r:Math.random()*1.1+.4});}
+}
+function tickP() {
+  if(!pOn)return;
+  pCtx.clearRect(0,0,pCvs.width,pCvs.height);
+  for(const p of pts){
+    const dx=pMx-p.x,dy=pMy-p.y,d=Math.hypot(dx,dy);
+    if(d<PCC.MOUSE_R&&d>0){p.vx+=(dx/d)*.012;p.vy+=(dy/d)*.012;}
+    const sp=Math.hypot(p.vx,p.vy);
+    if(sp>PCC.SPEED*2.3){p.vx=(p.vx/sp)*PCC.SPEED*2.3;p.vy=(p.vy/sp)*PCC.SPEED*2.3;}
+    p.vx*=.994;p.vy*=.994;p.x+=p.vx;p.y+=p.vy;
+    if(p.x<-10)p.x=pCvs.width+10;if(p.x>pCvs.width+10)p.x=-10;
+    if(p.y<-10)p.y=pCvs.height+10;if(p.y>pCvs.height+10)p.y=-10;
+    pCtx.beginPath();pCtx.arc(p.x,p.y,p.r,0,Math.PI*2);pCtx.fillStyle=`rgba(${A},.32)`;pCtx.fill();
+  }
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+    const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.hypot(dx,dy);
+    if(d<PCC.CONNECT){pCtx.beginPath();pCtx.moveTo(pts[i].x,pts[i].y);pCtx.lineTo(pts[j].x,pts[j].y);pCtx.strokeStyle=`rgba(${A},${(1-d/PCC.CONNECT)*.12})`;pCtx.lineWidth=.5;pCtx.stroke();}
+  }
+  for(let i=rips.length-1;i>=0;i--){const rp=rips[i];pCtx.beginPath();pCtx.arc(rp.x,rp.y,rp.r,0,Math.PI*2);pCtx.strokeStyle=`rgba(${A},${rp.a})`;pCtx.lineWidth=.7;pCtx.stroke();rp.r+=2.8;rp.a-=.02;if(rp.a<=0)rips.splice(i,1);}
+  pRaf=requestAnimationFrame(tickP);
+}
+function startParticles(){if(pOn)return;pOn=true;resizeP();makeP();tickP();}
+function stopParticles(){pOn=false;if(pRaf){cancelAnimationFrame(pRaf);pRaf=null;}}
+
+window.addEventListener('mousemove',e=>{
+  if(activePage!=='landing')return;
+  const r=pCvs.getBoundingClientRect();pMx=e.clientX-r.left;pMy=e.clientY-r.top;
+});
+document.getElementById('page-landing').addEventListener('click',e=>{
+  if(!pOn||e.target.closest('button,input,a'))return;
+  const r=pCvs.getBoundingClientRect();burstP(e.clientX-r.left,e.clientY-r.top);
+});
+
+/* ══ Chat demos ═══════════════════════════════════════════════════════════ */
+const TW='This is the [CODEBASE NAVIGATOR] — an AI-powered tool for chatting with any GitHub repository.\n\nThe pipeline: (1) paste a GitHub URL → (2) backend fetches all source files and chunks them → (3) embeds each chunk with text-embedding-3-small and stores vectors in Supabase pgvector → (4) answers your questions by retrieving relevant context and passing it to gpt-4o-mini.';
+let twTmr=null,twI=0;
+
+function chatDemo(mode) {
+  document.querySelectorAll('.ds-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById({'empty':'db-empty','typewriter':'db-tw','thinking':'db-think'}[mode]).classList.add('active');
+  if(twTmr){clearInterval(twTmr);twTmr=null;}
+  const ce=document.getElementById('c-empty'),cc=document.getElementById('c-convo');
+  const m2=document.getElementById('msg2'),tr=document.getElementById('think-row');
+  const tt=document.getElementById('tw-txt'),tc=document.getElementById('tw-cur');
+  if(mode==='empty'){ce.style.display='';cc.style.display='none';return;}
+  ce.style.display='none';cc.style.display='flex';m2.style.display='none';tr.style.display='none';
+  if(mode==='typewriter'){
+    twI=0;tt.textContent='';tc.style.display='inline-block';
+    twTmr=setInterval(()=>{twI=Math.min(twI+6,TW.length);tt.textContent=TW.slice(0,twI);if(twI>=TW.length){clearInterval(twTmr);twTmr=null;tc.style.display='none';}document.querySelector('.messages').scrollTop=9999;},16);
+  }
+  if(mode==='thinking'){tt.textContent=TW;tc.style.display='none';m2.style.display='flex';tr.style.display='flex';setTimeout(()=>{document.querySelector('.messages').scrollTop=9999;},50);}
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.c-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='chat')||(i===1&&tab==='graph')));
+  const pc=document.getElementById('cp-chat'),pg=document.getElementById('cp-graph');
+  if(tab==='chat'){pc.style.flex='1';pc.style.display='flex';pc.style.flexDirection='column';pc.style.minHeight='0';pg.style.display='none';}
+  else{pc.style.display='none';pg.style.display='flex';pg.style.flex='1';pg.style.alignItems='center';pg.style.justifyContent='center';pg.style.flexDirection='column';}
+  document.querySelectorAll('.c-tab').forEach((t,i)=>{
+    const sq=t.querySelector('.sq');if(!sq)return;
+    if(t.classList.contains('active')){sq.style.background='#c8a84b';sq.style.border='';}
+    else{sq.style.background='';sq.style.border='1px solid rgba(216,211,190,.2)';}
+  });
+}
+
+/* ══ Phase controls ═══════════════════════════════════════════════════════ */
+let curPhase = 0;
+function advancePhase() {
+  if(curPhase < 4) { curPhase++; renderPhases(); }
+}
+function renderPhases() {
+  for(let i=0;i<5;i++) {
+    const el=document.getElementById('ph'+i);
+    el.className='phase-box '+(i<curPhase?'done':i===curPhase?'active':'pending');
+    el.querySelector('.phase-num').textContent = i<curPhase ? '✓' : '0'+(i+1);
+  }
+}
+
+/* ══ BULLET HELL ENGINE ═══════════════════════════════════════════════════
+   Player:  white arrow at cursor, auto-fires small white rectangles
+   Enemies: dark grey arrows (HP 2) + grey spheres (HP 4)
+   Obstacles: static white/grey cube cover that blocks all bullets
+   Bullet cancel: player rect hitting enemy circle destroys both
+   Lives:   3 — on 3rd hit score+lives reset
+   Score:   time*5 + kills*100
+══════════════════════════════════════════════════════════════════════════ */
+let bhCvs, bhCtx;
+let bhOn=false, bhFrm=0;
+let bhMx=0, bhMy=0;
+let enemies=[], eBullets=[], pBullets=[], obstacles=[], bhParts=[], bhRings=[];
+let lives=3, score=0, kills=0, bhTime=0;
+let hitFlash=0, hitType=0;
+let playerFireTimer=0;
+
+const BUL_COL = ['#e06820','#4838a0']; // orange, purple
+
+function h2r(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;}
+
+function initBH() {
+  bhCvs=document.getElementById('bh-canvas');
+  bhCtx=bhCvs.getContext('2d');
+  bhMx=bhCvs.width/2; bhMy=bhCvs.height/2;
+}
+function resizeBH() {
+  bhCvs.width=bhCvs.parentElement.offsetWidth;
+  bhCvs.height=bhCvs.parentElement.offsetHeight;
+}
+
+function placeObstacles() {
+  obstacles=[];
+  const W=bhCvs.width, H=bhCvs.height;
+  const spots=[[.18,.22],[.76,.18],[.14,.67],[.82,.72],[.46,.16],[.54,.82],[.88,.44]];
+  for(const [fx,fy] of spots){
+    obstacles.push({x:W*fx, y:H*fy, half:18+Math.random()*8});
+  }
+}
+
+function spawnEnemy() {
+  const W=bhCvs.width, H=bhCvs.height;
+  const edge=Math.floor(Math.random()*4);
+  let x,y;
+  if(edge===0){x=Math.random()*W;y=-30;}
+  else if(edge===1){x=W+30;y=Math.random()*H;}
+  else if(edge===2){x=Math.random()*W;y=H+30;}
+  else{x=-30;y=Math.random()*H;}
+  const type=Math.floor(Math.random()*2); // 0=arrow, 1=sphere
+  const hp=type===0?2:4;
+  enemies.push({x,y,vx:0,vy:0,r:type===0?13:18,type,hp,fireTimer:90+Math.floor(Math.random()*80),spin:Math.random()*Math.PI*2});
+}
+
+function fireEnemy(e) {
+  const base=Math.atan2(bhMy-e.y,bhMx-e.x);
+  if(e.type===0) {
+    // Arrow: 5-spread orange bullets, slow
+    for(let i=-2;i<=2;i++){const a=base+i*.26,sp=1.5+Math.abs(i)*.07;eBullets.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:7,t:0});}
+  } else {
+    // Sphere: ring of purple bullets, slow
+    for(let i=0;i<10;i++){const a=(i/10)*Math.PI*2;eBullets.push({x:e.x,y:e.y,vx:Math.cos(a)*1.4,vy:Math.sin(a)*1.4,r:5.5,t:1});}
+  }
+}
+
+function isInObstacle(x,y,r) {
+  for(const o of obstacles){if(x+r>o.x-o.half&&x-r<o.x+o.half&&y+r>o.y-o.half&&y-r<o.y+o.half)return true;}
+  return false;
+}
+
+function drawObstacle(o) {
+  const h=o.half, off=h*0.38;
+  bhCtx.fillStyle='#dedad0'; bhCtx.fillRect(o.x-h,o.y-h,h*2,h*2);
+  bhCtx.beginPath();bhCtx.moveTo(o.x-h,o.y-h);bhCtx.lineTo(o.x-h+off,o.y-h-off);bhCtx.lineTo(o.x+h+off,o.y-h-off);bhCtx.lineTo(o.x+h,o.y-h);bhCtx.closePath();
+  bhCtx.fillStyle='#b4b0a4';bhCtx.fill();
+  bhCtx.beginPath();bhCtx.moveTo(o.x+h,o.y-h);bhCtx.lineTo(o.x+h+off,o.y-h-off);bhCtx.lineTo(o.x+h+off,o.y+h-off);bhCtx.lineTo(o.x+h,o.y+h);bhCtx.closePath();
+  bhCtx.fillStyle='#c8c4b8';bhCtx.fill();
+}
+
+function drawEnemy(e) {
+  bhCtx.save();
+  bhCtx.translate(e.x,e.y);
+  if(e.type===0) {
+    // Arrow pointing toward player
+    const ang=Math.atan2(bhMy-e.y,bhMx-e.x)+Math.PI*0.5;
+    bhCtx.rotate(ang);
+    const r=e.r;
+    bhCtx.beginPath();
+    bhCtx.moveTo(0,-r);bhCtx.lineTo(r*.62,r*.48);bhCtx.lineTo(0,r*.08);bhCtx.lineTo(-r*.62,r*.48);
+    bhCtx.closePath();
+    bhCtx.fillStyle='rgba(68,64,58,0.88)'; bhCtx.fill();
+    if(e.hp<2){bhCtx.strokeStyle='rgba(200,55,55,0.7)';bhCtx.lineWidth=1.5;bhCtx.stroke();}
+  } else {
+    // Sphere
+    const dmgFrac=(4-e.hp)/4;
+    bhCtx.beginPath();bhCtx.arc(0,0,e.r,0,Math.PI*2);
+    bhCtx.fillStyle=`rgba(90,86,78,${0.75-dmgFrac*0.25})`; bhCtx.fill();
+    bhCtx.beginPath();bhCtx.arc(-e.r*.22,-e.r*.22,e.r*.32,0,Math.PI*2);
+    bhCtx.fillStyle='rgba(148,144,134,0.35)'; bhCtx.fill();
+    if(dmgFrac>0){bhCtx.strokeStyle=`rgba(200,55,55,${dmgFrac*0.7})`;bhCtx.lineWidth=1.5;bhCtx.stroke();}
+  }
+  bhCtx.restore();
+}
+
+function onHit() {
+  lives--;
+  hitFlash=22; hitType=1;
+  updateLivesHUD();
+  if(lives<=0) {
+    const old=score;
+    score=0; kills=0; bhTime=0; lives=3;
+    updateHUD();
+    updateLivesHUD();
+    document.getElementById('bh-time').textContent='0s';
+    const rc=document.getElementById('recal');
+    rc.style.display='block';
+    rc.style.animation='none'; rc.offsetHeight; rc.style.animation='recal-in .3s ease-out';
+    setTimeout(()=>{rc.style.display='none';},1400);
+    if(old>0){
+      const sp=document.getElementById('score-popup');
+      sp.textContent='SCORE RESET (was '+old+')';
+      sp.style.display='block';sp.style.animation='none';sp.offsetHeight;sp.style.animation='score-flash 1.2s ease-out forwards';
+      setTimeout(()=>{sp.style.display='none';},1300);
+    }
+  }
+}
+
+function killEnemy(e, idx) {
+  enemies.splice(idx,1);
+  kills++; score+=100;
+  bhRings.push({x:e.x,y:e.y,r:0,a:.65,sp:2.8});
+  const kCol=e.type===0?'#888078':'#9c9890';
+  for(let i=0;i<10;i++){
+    const ang=(i/10)*Math.PI*2+Math.random()*.3;
+    const sp=1.2+Math.random()*2.5;
+    bhParts.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:1,r:2+Math.random()*2,col:kCol});
+  }
+  updateHUD();
+}
+
+function updateHUD() {
+  document.getElementById('bh-score').textContent=score;
+  document.getElementById('bh-kills').textContent=kills;
+}
+function updateLivesHUD() {
+  for(let i=1;i<=3;i++) {
+    document.getElementById('life-'+i).classList.toggle('lost', i>lives);
+  }
+}
+
+function tickBH() {
+  if(!bhOn)return;
+  bhFrm++;
+  if(bhFrm%60===0){bhTime++;score+=5;updateHUD();document.getElementById('bh-time').textContent=bhTime+'s';}
+
+  const W=bhCvs.width, H=bhCvs.height;
+  bhCtx.clearRect(0,0,W,H);
+
+  // Subtle grid on taupe background
+  bhCtx.strokeStyle='rgba(100,96,86,.07)'; bhCtx.lineWidth=.5;
+  for(let x=0;x<W;x+=40){bhCtx.beginPath();bhCtx.moveTo(x,0);bhCtx.lineTo(x,H);bhCtx.stroke();}
+  for(let y=0;y<H;y+=40){bhCtx.beginPath();bhCtx.moveTo(0,y);bhCtx.lineTo(W,y);bhCtx.stroke();}
+
+  // Obstacles (drawn first — behind everything)
+  for(const o of obstacles) drawObstacle(o);
+
+  // Spawn enemies
+  if(bhFrm%110===0 && enemies.length<8) spawnEnemy();
+
+  // ── Enemies ──────────────────────────────────────────────────────
+  for(let i=enemies.length-1;i>=0;i--) {
+    const e=enemies[i];
+    const cx=W*.5, cy=H*.5, dx=cx-e.x, dy=cy-e.y, d=Math.max(Math.hypot(dx,dy),1);
+    const targetD=Math.min(W,H)*.3;
+    if(d>targetD){e.vx+=(dx/d)*.055;e.vy+=(dy/d)*.055;}
+    else{const tx=-dy/d,ty=dx/d;e.vx+=tx*.03;e.vy+=ty*.03;}
+    const sp=Math.hypot(e.vx,e.vy);
+    if(sp>1.4){e.vx=(e.vx/sp)*1.4;e.vy=(e.vy/sp)*1.4;}
+    e.vx*=.94;e.vy*=.94; e.x+=e.vx; e.y+=e.vy;
+    // Soft obstacle repulsion
+    for(const o of obstacles){
+      const odx=e.x-o.x,ody=e.y-o.y,od=Math.hypot(odx,ody);
+      if(od<o.half+e.r+4){e.vx+=(odx/od)*.12;e.vy+=(ody/od)*.12;}
+    }
+    e.fireTimer--;
+    if(e.fireTimer<=0){e.fireTimer=90+Math.floor(Math.random()*60);fireEnemy(e);}
+    drawEnemy(e);
+  }
+
+  // ── Enemy bullets ─────────────────────────────────────────────
+  for(let i=eBullets.length-1;i>=0;i--) {
+    const b=eBullets[i];
+    b.x+=b.vx; b.y+=b.vy;
+    if(b.x<-20||b.x>W+20||b.y<-20||b.y>H+20){eBullets.splice(i,1);continue;}
+    if(isInObstacle(b.x,b.y,b.r)){eBullets.splice(i,1);continue;}
+    const col=BUL_COL[b.t];
+    bhCtx.beginPath();bhCtx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    bhCtx.fillStyle=h2r(col,.88);bhCtx.fill();
+    bhCtx.beginPath();bhCtx.arc(b.x,b.y,b.r*.45,0,Math.PI*2);
+    bhCtx.fillStyle='rgba(255,255,255,0.42)';bhCtx.fill();
+    if(Math.hypot(b.x-bhMx,b.y-bhMy)<b.r+4){eBullets.splice(i,1);onHit();}
+  }
+
+  // ── Player auto-fire ──────────────────────────────────────────
+  playerFireTimer++;
+  if(playerFireTimer>=20 && enemies.length>0){
+    playerFireTimer=0;
+    let nearest=null,minD=Infinity;
+    for(const e of enemies){const d=Math.hypot(e.x-bhMx,e.y-bhMy);if(d<minD){minD=d;nearest=e;}}
+    if(nearest){
+      const a=Math.atan2(nearest.y-bhMy,nearest.x-bhMx);
+      pBullets.push({x:bhMx,y:bhMy,vx:Math.cos(a)*4.5,vy:Math.sin(a)*4.5,angle:a});
+    }
+  }
+
+  // ── Player bullets (rectangles) ───────────────────────────────
+  for(let i=pBullets.length-1;i>=0;i--) {
+    const b=pBullets[i];
+    b.x+=b.vx; b.y+=b.vy;
+    if(b.x<-10||b.x>W+10||b.y<-10||b.y>H+10){pBullets.splice(i,1);continue;}
+    if(isInObstacle(b.x,b.y,4)){pBullets.splice(i,1);continue;}
+    // Cancel enemy bullets
+    let cancelled=false;
+    for(let j=eBullets.length-1;j>=0;j--){
+      if(Math.hypot(b.x-eBullets[j].x,b.y-eBullets[j].y)<eBullets[j].r+4){
+        eBullets.splice(j,1);pBullets.splice(i,1);cancelled=true;break;
       }
     }
-
-    function showEmpty() {
-      document.getElementById('empty-state').style.display   = '';
-      document.getElementById('sample-convo').style.display  = 'none';
-    }
-
-    function showConvo() {
-      document.getElementById('empty-state').style.display   = 'none';
-      document.getElementById('sample-convo').style.display  = '';
-    }
-
-    function prefill(text) {
-      const el = document.getElementById('chat-input');
-      el.value = text;
-      el.focus();
-    }
-
-    /* ── Particle network canvas ───────────────────────────────────── */
-    const canvas  = document.getElementById('bg-canvas');
-    const ctx     = canvas.getContext('2d');
-    const VIOLET  = '139, 92, 246';   // rgb values for violet-500
-    const CONNECT = 140;               // max px between connected nodes
-    const COUNT   = 72;
-    const SPEED   = 0.35;
-    const MOUSE_R = 180;               // mouse attraction radius
-
-    let particles = [];
-    let ripples   = [];
-    let mouse     = { x: -9999, y: -9999 };
-    let rafId     = null;
-    let running   = false;
-
-    function resize() {
-      const landing = document.getElementById('page-landing');
-      canvas.width  = landing.offsetWidth;
-      canvas.height = landing.offsetHeight;
-    }
-
-    function makeParticles() {
-      particles = Array.from({ length: COUNT }, () => ({
-        x:  Math.random() * canvas.width,
-        y:  Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * SPEED,
-        vy: (Math.random() - 0.5) * SPEED,
-        r:  Math.random() * 1.4 + 0.6,
-      }));
-    }
-
-    function tick() {
-      if (!running) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (const p of particles) {
-        // Gentle mouse attraction
-        const dx   = mouse.x - p.x;
-        const dy   = mouse.y - p.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < MOUSE_R && dist > 0) {
-          p.vx += (dx / dist) * 0.018;
-          p.vy += (dy / dist) * 0.018;
-        }
-
-        // Speed cap + dampen
-        const speed = Math.hypot(p.vx, p.vy);
-        if (speed > SPEED * 2.5) {
-          p.vx = (p.vx / speed) * SPEED * 2.5;
-          p.vy = (p.vy / speed) * SPEED * 2.5;
-        }
-        p.vx *= 0.992;
-        p.vy *= 0.992;
-
-        // Move
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Wrap edges (seamless)
-        if (p.x < -10)               p.x = canvas.width  + 10;
-        if (p.x > canvas.width + 10) p.x = -10;
-        if (p.y < -10)               p.y = canvas.height + 10;
-        if (p.y > canvas.height + 10) p.y = -10;
-
-        // Draw node
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${VIOLET}, 0.55)`;
-        ctx.fill();
+    if(cancelled)continue;
+    // Hit enemies
+    let hit=false;
+    for(let j=enemies.length-1;j>=0;j--){
+      if(Math.hypot(b.x-enemies[j].x,b.y-enemies[j].y)<enemies[j].r+4){
+        enemies[j].hp--;
+        if(enemies[j].hp<=0)killEnemy(enemies[j],j);
+        pBullets.splice(i,1);hit=true;break;
       }
-
-      // Draw edges
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx   = particles[i].x - particles[j].x;
-          const dy   = particles[i].y - particles[j].y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < CONNECT) {
-            const alpha = (1 - dist / CONNECT) * 0.22;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(${VIOLET}, ${alpha})`;
-            ctx.lineWidth   = 0.6;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw ripples
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        const rp = ripples[i];
-        ctx.beginPath();
-        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${VIOLET}, ${rp.alpha})`;
-        ctx.lineWidth   = 1;
-        ctx.stroke();
-        rp.r     += 3;
-        rp.alpha -= 0.025;
-        if (rp.alpha <= 0) ripples.splice(i, 1);
-      }
-
-      rafId = requestAnimationFrame(tick);
     }
+    if(hit)continue;
+    // Draw: small white rectangle
+    bhCtx.save();
+    bhCtx.translate(b.x,b.y);
+    bhCtx.rotate(b.angle+Math.PI*.5);
+    bhCtx.fillStyle='rgba(255,252,244,0.92)';
+    bhCtx.fillRect(-2,-5,4,10);
+    bhCtx.restore();
+  }
 
-    function startCanvas() {
-      if (running) return;
-      running = true;
-      resize();
-      makeParticles();
-      tick();
-    }
+  // ── Kill particles ────────────────────────────────────────────
+  for(let i=bhParts.length-1;i>=0;i--) {
+    const p=bhParts[i];p.x+=p.vx;p.y+=p.vy;p.vx*=.91;p.vy*=.91;p.life-=.03;
+    if(p.life<=0){bhParts.splice(i,1);continue;}
+    bhCtx.beginPath();bhCtx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);bhCtx.fillStyle=h2r(p.col,p.life*.8);bhCtx.fill();
+  }
 
-    function stopCanvas() {
-      running = false;
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = null;
-    }
+  // ── Scan rings (kill effect) ──────────────────────────────────
+  for(let i=bhRings.length-1;i>=0;i--) {
+    const s=bhRings[i];
+    bhCtx.beginPath();bhCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    bhCtx.strokeStyle=`rgba(120,115,105,${s.a})`;bhCtx.lineWidth=1.5;bhCtx.stroke();
+    s.r+=s.sp;s.a-=.022;if(s.a<=0)bhRings.splice(i,1);
+  }
 
-    // Mouse tracking
-    document.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top + document.getElementById('page-landing').scrollTop;
-    });
+  // ── Player (white arrow pointing up) ──────────────────────────
+  const mx=bhMx, my=bhMy;
+  // Hitbox ring
+  bhCtx.beginPath();bhCtx.arc(mx,my,16,0,Math.PI*2);
+  bhCtx.strokeStyle='rgba(130,126,116,0.45)';bhCtx.lineWidth=1;bhCtx.stroke();
+  // Arrow shape
+  bhCtx.save();bhCtx.translate(mx,my);
+  const ps=12;
+  bhCtx.beginPath();
+  bhCtx.moveTo(0,-ps);
+  bhCtx.lineTo(ps*.6,ps*.5);
+  bhCtx.lineTo(0,ps*.12);
+  bhCtx.lineTo(-ps*.6,ps*.5);
+  bhCtx.closePath();
+  bhCtx.fillStyle='rgba(255,252,248,0.95)';bhCtx.fill();
+  bhCtx.strokeStyle='rgba(180,176,168,0.4)';bhCtx.lineWidth=.6;bhCtx.stroke();
+  bhCtx.restore();
 
-    // Click to spawn a burst of particles
-    const MAX_PARTICLES = 220;
-    const BURST_COUNT   = 8;
+  // ── Hit flash ────────────────────────────────────────────────
+  const fl=document.getElementById('bh-flash');
+  if(hitFlash>0){
+    const col=hitType===1?`rgba(200,40,40,${(hitFlash/22)*.22})`:`rgba(200,168,75,${(hitFlash/8)*.12})`;
+    fl.style.background=col;fl.style.opacity=1;hitFlash--;
+  } else {fl.style.opacity=0;}
 
-    canvas.addEventListener('click', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const cx   = e.clientX - rect.left;
-      const cy   = e.clientY - rect.top + document.getElementById('page-landing').scrollTop;
+  bhRaf=requestAnimationFrame(tickBH);
+}
 
-      // Ripple effect
-      ripples.push({ x: cx, y: cy, r: 0, alpha: 0.6 });
+function startBH() {
+  if(bhOn)return;
+  bhOn=true;
+  resizeBH();
+  bhMx=bhCvs.width/2; bhMy=bhCvs.height/2;
+  enemies=[];eBullets=[];pBullets=[];bhParts=[];bhRings=[];
+  lives=3;score=0;kills=0;bhTime=0;hitFlash=0;playerFireTimer=0;
+  updateHUD();updateLivesHUD();
+  document.getElementById('bh-score').textContent='0';
+  document.getElementById('bh-time').textContent='0s';
+  placeObstacles();
+  tickBH();
+}
+function stopBH() {
+  bhOn=false;
+  if(bhRaf){cancelAnimationFrame(bhRaf);bhRaf=null;}
+}
 
-      // Spawn particles capped at MAX_PARTICLES
-      const slots = Math.min(BURST_COUNT, MAX_PARTICLES - particles.length);
-      for (let i = 0; i < slots; i++) {
-        const angle = (i / BURST_COUNT) * Math.PI * 2 + Math.random() * 0.5;
-        const speed = SPEED * (1.5 + Math.random() * 2);
-        particles.push({
-          x:  cx + (Math.random() - 0.5) * 8,
-          y:  cy + (Math.random() - 0.5) * 8,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          r:  Math.random() * 1.4 + 0.6,
-        });
-      }
-    });
+document.getElementById('page-ingest').addEventListener('mousemove',e=>{
+  const r=bhCvs.getBoundingClientRect();bhMx=e.clientX-r.left;bhMy=e.clientY-r.top;
+});
 
-    // Also allow clicks anywhere on the landing hero section (not just canvas)
-    document.getElementById('page-landing').addEventListener('click', (e) => {
-      if (e.target === canvas) return; // already handled above
-      const rect = canvas.getBoundingClientRect();
-      const cx   = e.clientX - rect.left;
-      const cy   = e.clientY - rect.top + document.getElementById('page-landing').scrollTop;
-      ripples.push({ x: cx, y: cy, r: 0, alpha: 0.6 });
-      const slots = Math.min(BURST_COUNT, MAX_PARTICLES - particles.length);
-      for (let i = 0; i < slots; i++) {
-        const angle = (i / BURST_COUNT) * Math.PI * 2 + Math.random() * 0.5;
-        const speed = SPEED * (1.5 + Math.random() * 2);
-        particles.push({
-          x:  cx + (Math.random() - 0.5) * 8,
-          y:  cy + (Math.random() - 0.5) * 8,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          r:  Math.random() * 1.4 + 0.6,
-        });
-      }
-    });
+window.addEventListener('resize',()=>{
+  if(pOn){resizeP();makeP();}
+  if(bhOn)resizeBH();
+});
 
-    window.addEventListener('resize', () => {
-      if (running) { resize(); makeParticles(); }
-    });
-
-    // Respect prefers-reduced-motion
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      startCanvas();
-    }
-  </script>
+/* ══ Init ═════════════════════════════════════════════════════════════════ */
+initP(); initBH();
+if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches) startParticles();
+</script>
 </body>
 </html>

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { getIngestionStatus } from "@/lib/api";
+import { BulletHell } from "@/components/BulletHell";
+import { NierCorners } from "@/components/NierCorners";
 
 interface IngestionGateProps {
   repoId: string;
@@ -12,139 +14,129 @@ type Phase = "pending" | "fetching" | "embedding" | "storing" | "done" | "ready"
 
 const PHASE_ORDER: Phase[] = ["pending", "fetching", "embedding", "storing", "done"];
 
-function phaseIndex(phase: Phase): number {
-  return PHASE_ORDER.indexOf(phase);
+const PHASE_LABELS: Record<string, string> = {
+  pending:   "PENDING",
+  fetching:  "FETCH",
+  embedding: "EMBED",
+  storing:   "STORE",
+};
+
+function phaseIndex(p: Phase) {
+  return PHASE_ORDER.indexOf(p);
 }
 
 export function IngestionGate({ repoId, children }: IngestionGateProps) {
-  const [status, setStatus] = useState<Phase>("pending");
+  const [status, setStatus]   = useState<Phase>("pending");
   const [message, setMessage] = useState("Starting ingestion...");
-  const [ready, setReady] = useState(false);
+  const [ready, setReady]     = useState(false);
 
   const poll = useCallback(async () => {
     try {
-      const res = await getIngestionStatus(repoId);
+      const res   = await getIngestionStatus(repoId);
       const phase = res.status as Phase;
       setStatus(phase);
       setMessage(res.message);
-      if (phase === "done" || phase === "ready") {
-        setReady(true);
-      }
+      if (phase === "done" || phase === "ready") setReady(true);
     } catch {
-      // If status endpoint errors, assume ready (e.g. old repo from prev session)
       setReady(true);
     }
   }, [repoId]);
 
   useEffect(() => {
     poll();
-    const interval = setInterval(async () => {
+    const iv = setInterval(async () => {
       try {
-        const res = await getIngestionStatus(repoId);
+        const res   = await getIngestionStatus(repoId);
         const phase = res.status as Phase;
         setStatus(phase);
         setMessage(res.message);
-        if (phase === "done" || phase === "ready") {
-          setReady(true);
-          clearInterval(interval);
-        } else if (phase === "error") {
-          clearInterval(interval);
-        }
+        if (phase === "done" || phase === "ready") { setReady(true); clearInterval(iv); }
+        else if (phase === "error") clearInterval(iv);
       } catch {
         setReady(true);
-        clearInterval(interval);
+        clearInterval(iv);
       }
     }, 2000);
-    return () => clearInterval(interval);
+    return () => clearInterval(iv);
   }, [repoId, poll]);
 
   if (ready) return <>{children}</>;
 
   if (status === "error") {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 text-center px-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
-          <ErrorIcon />
+      <div className="relative flex h-full flex-col items-center justify-center gap-6 overflow-hidden bg-[#cac6b6] px-4">
+        <BulletHell />
+        <div className="relative z-10 border border-[#c84848]/40 bg-[#26211a]/90 p-8 text-center backdrop-blur-sm">
+          <NierCorners accent="#c84848" size={10} />
+          <p className="mb-1 font-mono text-xs uppercase tracking-widest text-[#c84848]">
+            ■ SYSTEM ERROR
+          </p>
+          <h2 className="mb-3 font-mono text-sm text-[#d8d3be]">INGESTION FAILED</h2>
+          <p className="mb-6 max-w-sm font-mono text-xs text-[#8a8575]">{message}</p>
+          <a
+            href="/"
+            className="border border-[#8a8575]/40 bg-[#1a1610] px-6 py-2 font-mono text-xs uppercase tracking-widest text-[#8a8575] transition-colors hover:border-[#c8a84b] hover:text-[#c8a84b]"
+          >
+            ← RETURN
+          </a>
         </div>
-        <div>
-          <h2 className="text-base font-semibold text-slate-200">Ingestion failed</h2>
-          <p className="mt-1 max-w-sm text-sm text-slate-500">{message}</p>
-        </div>
-        <a
-          href="/"
-          className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
-        >
-          Try another repo
-        </a>
       </div>
     );
   }
 
-  const currentIndex = phaseIndex(status);
+  const ci = phaseIndex(status);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-8 px-4">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-400">
-        <SpinnerIcon />
-      </div>
+    <div className="relative flex h-full flex-col overflow-hidden bg-[#cac6b6]">
+      <BulletHell />
 
-      <div className="text-center">
-        <h2 className="text-base font-semibold text-slate-200">Indexing repository</h2>
-        <p className="mt-1 text-sm text-slate-400">{message}</p>
-      </div>
+      {/* HUD overlay */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6">
+        <div className="relative border border-[#8a8575]/40 bg-[#26211a]/88 p-4 backdrop-blur-sm sm:p-5">
+          <NierCorners accent="#c8a84b" size={10} />
 
-      <div className="flex items-center gap-2">
-        {PHASE_ORDER.slice(0, -1).map((phase, i) => (
-          <div key={phase} className="flex items-center gap-2">
-            <div
-              className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-colors duration-300 ${
-                i < currentIndex
-                  ? "bg-violet-600 text-white"
-                  : i === currentIndex
-                  ? "border-2 border-violet-500 bg-violet-500/10 text-violet-400"
-                  : "border border-slate-700 bg-slate-900 text-slate-600"
-              }`}
-            >
-              {i < currentIndex ? <CheckIcon /> : i + 1}
-            </div>
-            {i < PHASE_ORDER.length - 2 && (
-              <div
-                className={`h-px w-8 transition-colors duration-300 ${
-                  i < currentIndex - 1 ? "bg-violet-600" : "bg-slate-700"
-                }`}
-              />
-            )}
+          {/* Status line */}
+          <div className="mb-2 flex items-center gap-3">
+            <span className="animate-nier-pulse font-mono text-[10px] text-[#c8a84b]">■</span>
+            <span className="font-mono text-xs uppercase tracking-widest text-[#e8e4d0]">
+              INDEXING REPOSITORY
+            </span>
           </div>
-        ))}
+
+          {/* Message */}
+          <p className="mb-4 font-mono text-[11px] text-[#8a8575] truncate">{message}</p>
+
+          {/* Phase indicators */}
+          <div className="mb-3 flex items-center gap-2">
+            {PHASE_ORDER.slice(0, -1).map((phase, i) => (
+              <div key={phase} className="flex items-center gap-2">
+                <div
+                  className={`flex h-5 w-14 items-center justify-center font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 ${
+                    i < ci
+                      ? "bg-[#c8a84b] text-[#0a0a08]"
+                      : i === ci
+                      ? "border border-[#c8a84b] text-[#c8a84b]"
+                      : "border border-[#2e2b1e] text-[#4a4535]"
+                  }`}
+                >
+                  {i < ci ? "✓" : PHASE_LABELS[phase]}
+                </div>
+                {i < PHASE_ORDER.length - 2 && (
+                  <div
+                    className={`h-px w-3 transition-colors duration-500 ${
+                      i < ci - 1 ? "bg-[#c8a84b]" : "bg-[#2e2b1e]"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          <p className="font-mono text-[9px] uppercase tracking-widest text-[#8a8575]">
+            MOVE CURSOR TO DODGE · NEURAL SCAN IN PROGRESS
+          </p>
+        </div>
       </div>
-
-      <p className="text-xs text-slate-600">This usually takes 20–60 seconds</p>
     </div>
-  );
-}
-
-function SpinnerIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="animate-spin">
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function ErrorIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
   );
 }
